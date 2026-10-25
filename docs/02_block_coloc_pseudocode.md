@@ -129,7 +129,7 @@ leads_1 ← ConditionalLeads(1);  leads_2 ← ConditionalLeads(2)
 |---|---|---|
 | block-coloc（交接包原版） | 交接包原样 | 对照 |
 | block-coloc（边际 lead 选择） | ① 去掉 top-5 补位；② 去掉“单 lead 时取 max(block, 整区域)”；③ 两性状各用自己的 LD；④ 加切块条件：至少一个性状有 ≥ 2 个 lead 才切块，否则跑整区域 coloc.abf | ① 补位会在没有信号的性状上强行造出 lead，用噪声建块。② 取两个分数的最大值会系统性抬高 PP4，误报随之上升。③ eQTL 统计量应配 eQTL 样本的 LD。④ 两个性状都只有一个信号时，coloc.abf 的单因果假设成立，没有理由切块；Wallace (2021) 也发现真单因果时整区域 coloc 表现最好 |
-| block-coloc（条件 lead 选择） | 第 2 个及以后的 lead 必须在条件分析后仍显著才计数 | 强信号的 LD 影子可以过阈值，又因 r² < 0.1 躲过 clump，被误数成第二个信号（例子见 [bulk 模型 1.7](01_bulk_model.md)） |
+| block-coloc（条件 lead 选择） | 第 2 个及以后的 lead 必须在条件分析后仍显著才计数 | 与强信号有 LD 的 SNP 也可能边际显著，又因 r² < 0.1 躲过 clump；它不是条件独立的信号，边际计数却会把它误数成第二个信号（例子见 [bulk 模型 1.7](01_bulk_model.md)） |
 
 **找不到足够 lead 时**：两个新版本都直接跑整区域 coloc.abf；交接包原版则先用 top-5 补位凑出候选。
 

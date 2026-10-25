@@ -105,7 +105,7 @@ z ~ N( R λ ,  R )
 
 | 方法 / 步骤 | 怎么用到 |
 |---|---|
-| coloc.abf | 假设每个性状只有一个因果，其余 SNP 的信号都是这个因果的 LD 影子 |
+| coloc.abf | 假设每个性状只有一个因果变异，其余 SNP 的关联都来自它们与这个因果变异的 LD |
 | SuSiE / coloc.susie | `susie_rss` 直接以 `z ~ N(Rλ, R)` 为似然 |
 | block-coloc（条件 lead 选择）的条件 z | 就是这个多元正态的条件分布，公式见表下 |
 | block 划分 | 用 R 判断哪些 SNP 属于同一个信号 |
@@ -120,13 +120,15 @@ z_j|S = (z_j − R_jS R_SS⁻¹ z_S) / sqrt(1 − R_jS R_SS⁻¹ R_Sj)
 （已核对：`ld_qtl_n1000.f64` 与 1,000 人剂量的相关矩阵逐元素相同，最大差 4e-14。）
 所以 bulk 是这些方法的假设**全部成立的理想情形**：如果某个方法在 bulk 下表现不好，原因在方法本身，而不是模型设错了。
 
-### 例子：LD 影子怎么骗过“数 lead”
+### 例子：边际显著但不是条件独立的 lead
+
+**条件独立信号**（conditionally independent signal）：以已选的 lead 为条件后仍然显著的信号。这是条件与联合分析（GCTA-COJO，Yang et al. 2012）中的标准说法，block-coloc（条件 lead 选择）只把条件独立的 lead 计为信号。
 
 设 GWAS 的因果 SNP c 很强，`z_c = 20`（q = 2%）。旁边有个非因果 SNP j，与 c 的 `r = 0.3`（`r² = 0.09 < 0.1`）：
 
 - j 的期望 z 是 `0.3 × 20 = 6`，p ≈ 2e-9，远过 lead 阈值 1e-3；
 - 它与 c 的 `r² = 0.09 < 0.1`，clump 去不掉它；
-- 于是只按边际 p 值数 lead（block-coloc 边际 lead 选择），会数出 **2 个 lead**，误以为有两个信号，走 block 分支。
+- 于是只按边际 p 值数 lead（block-coloc 边际 lead 选择），会把 j 当成第二个信号，数出 **2 个 lead**，走 block 分支。
 
 如果以 c 为条件再看 j（block-coloc 条件 lead 选择）：
 
@@ -134,7 +136,7 @@ z_j|S = (z_j − R_jS R_SS⁻¹ z_S) / sqrt(1 − R_jS R_SS⁻¹ R_Sj)
 z_j|c = (6 − 0.3 × 20) / sqrt(1 − 0.09) = 0
 ```
 
-条件后 j 不再显著，不计为第二个 lead，于是正确地不切块、直接跑整区域 coloc.abf。
+条件后 j 的 z 为 0，说明它不是条件独立的信号，不计为第二个 lead，于是正确地不切块、直接跑整区域 coloc.abf。
 信号弱时这个问题不明显：`z_c = 7.7` 时，`r = 0.3` 的 SNP 期望 z 只有 2.3（p ≈ 0.02），过不了 1e-3。
 这就是第二段要变化 GWAS 强度的原因之一。
 
@@ -193,4 +195,5 @@ single_shared 没有成对的因果，不参与分档。所有因果 SNP 都要�
 
 - Giambartolomei C, et al. (2014). Bayesian test for colocalisation between pairs of genetic association studies using summary statistics. *PLoS Genet* 10(5): e1004383.（`doc/material/coloc_2014.pdf`）
 - Wallace C (2021). A more accurate method for colocalisation analysis allowing for multiple causal variants. *PLoS Genet* 17(9): e1009440.（`doc/material/coloc_susie_2021.pdf`）
+- Yang J, et al. (2012). Conditional and joint multiple-SNP analysis of GWAS summary statistics identifies additional variants influencing complex traits. *Nat Genet* 44(4): 369–375.
 - Wang G, Sarkar A, Carbonetto P, Stephens M (2020). A simple new approach to variable selection in regression, with application to genetic fine mapping. *JRSS B* 82(5): 1273–1300.
