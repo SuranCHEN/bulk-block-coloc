@@ -4,7 +4,7 @@
 本仓库评估 **block-coloc**：只在确有多个独立信号时，用 LD 把区域切块、每块跑 coloc.abf；其余情况直接跑整区域 coloc.abf。
 我们在真实 UKBB chr22 基因型上做模拟，与整区域 coloc.abf、coloc.susie、coloc.signals 在相同误报率下比较。
 
-**文档网站**：https://YOUR-USERNAME.github.io/bulk-block-coloc/ （开启 GitHub Pages 后把 YOUR-USERNAME 换成你的用户名）
+**文档网站**：https://SuranCHEN.github.io/bulk-block-coloc/
 
 ## 内容
 
