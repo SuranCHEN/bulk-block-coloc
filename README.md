@@ -13,7 +13,7 @@
 左边 3 组是共定位场景（越高越好），右边 2 组是不共定位场景（越低越好），虚线是 5% 误报率。
 
 1. **检出率**：误报率都控制在 5% 时，block-coloc（条件 lead 选择）检出 93.3% 的共定位位点，高于整区域 coloc.abf（91.2%，配对差 +2.2 个百分点，95% CI +1.1 至 +3.2）和 coloc.susie + fallback（90.1%）。提升主要来自 double_shared2（94.2% 对 89.5%）。但它低于 coloc.signals (cond)（95.1%），与 block-coloc（交接包原版，94.2%）相近。
-2. **是否切块**：条件 lead 选择几乎不会把单信号位点错误地切块（single_shared 1.5%，交接包原版为 84.8%）；但 eQTL 信号较弱（N = 1,000，|z| ≈ 3.9）时常漏掉第二个信号，single_double_shared 只有 26.0% 切块。
+2. **是否切块**：条件 lead 选择几乎不会把单信号位点错误地切块（single_shared 1.5%，交接包原版为 84.8%）；但 eQTL 信号较弱（N = 1,000，\|z\| ≈ 3.9）时常漏掉第二个信号，single_double_shared 只有 26.0% 切块。
 3. **最难的情况**：single_double_shared 中，当 eQTL 特有的信号比共享信号更显著时，所有方法的检出率都明显下降（coloc.abf 73.0%，block-coloc 条件 lead 选择 76.2%，coloc.susie + fallback 54.7%）。
 
 这是一个设定下的结果，测试窗口只有 6 个；详细数字、置信区间和注意事项见 [结果页](https://suranchen.github.io/bulk-block-coloc/04_results.html)。第二段（变强度、变 LD）待定。
