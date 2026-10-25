@@ -1,0 +1,16 @@
+method	scenario	true_signals	should_go	n	branch_block	correct_branch	leads_match_truth	median_leads
+block-coloc (conditional lead selection, proposed)	single_shared	1+1	whole	600	1.5%	98.5%	59.3%	1+1
+block-coloc (conditional lead selection, proposed)	single_double_shared	1+2	block	600	26.0%	26.0%	24.5%	1+1
+block-coloc (conditional lead selection, proposed)	double_shared2	2+2	block	600	78.8%	78.8%	22.5%	2+1
+block-coloc (conditional lead selection, proposed)	single_distinct	1+1	whole	600	0.3%	99.7%	58.2%	1+1
+block-coloc (conditional lead selection, proposed)	double_distinct	2+2	block	600	81.0%	81.0%	23.7%	2+1
+block-coloc (marginal lead selection)	single_shared	1+1	whole	600	3.7%	96.3%	35.8%	1+0
+block-coloc (marginal lead selection)	single_double_shared	1+2	block	600	21.7%	21.7%	14.5%	1+1
+block-coloc (marginal lead selection)	double_shared2	2+2	block	600	56.2%	56.2%	9.2%	2+1
+block-coloc (marginal lead selection)	single_distinct	1+1	whole	600	4.3%	95.7%	31.3%	1+0
+block-coloc (marginal lead selection)	double_distinct	2+2	block	600	59.8%	59.8%	9.3%	2+1
+block-coloc (original handoff)	single_shared	1+1	whole	600	84.8%	15.2%	78.3%	1+1
+block-coloc (original handoff)	single_double_shared	1+2	block	600	56.8%	56.8%	25.7%	1+1
+block-coloc (original handoff)	double_shared2	2+2	block	600	94.2%	94.2%	17.8%	2+1
+block-coloc (original handoff)	single_distinct	1+1	whole	600	3.2%	96.8%	76.0%	1+1
+block-coloc (original handoff)	double_distinct	2+2	block	600	28.0%	28.0%	17.7%	2+1

@@ -1,0 +1,16 @@
+# Never commit data or run outputs (UKBB data must stay local)
+data/
+outputs/
+*.f32
+*.f64
+*.npy
+*.rds
+*.tsv.gz
+*.bed
+*.bim
+*.fam
+*donors*
+shards_*/
+.DS_Store
+.Rhistory
+.Rproj.user/
