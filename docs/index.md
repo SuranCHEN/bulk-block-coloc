@@ -22,6 +22,7 @@
 2. [block-coloc 流程与伪代码](02_block_coloc_pseudocode.md)：block-coloc 三个版本（条件 lead 选择、边际 lead 选择、交接包原版）各做了什么、改了什么、为什么改
 3. [代码说明与复现](03_code.md)：文件结构、数据流、复现命令、自检
 4. [结果](04_results.md)：第一段（主设置）已完成；第二段（变强度、变 LD）待定
+5. [早期 bulk 结果](05_early_bulk_results.md)：10 月中按 8 月旧设定重建的结果（设定不同，不能直接和第 4 页比较）
 
 ## 一句话设定
 
