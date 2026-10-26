@@ -6,17 +6,21 @@
 
 **文档网站**：https://SuranCHEN.github.io/bulk-block-coloc/
 
-## 主要结论（第一段：主设置）
+## 主要结论
 
 ![测试窗口上各方法在每个场景中被判为共定位的比例（误报率匹配到 5%）](docs/matched_fpr_by_scenario.png)
 
-左边 3 组是共定位场景（越高越好），右边 2 组是不共定位场景（越低越好），虚线是 5% 误报率。
+**第一段（主设置）**：误报率都控制在 5% 时，block-coloc（条件 lead 选择）检出 93.3% 的共定位位点，高于整区域 coloc.abf（91.2%）和 coloc.susie + fallback（90.1%），低于 coloc.signals (cond)（95.1%）。它几乎不会把单信号位点错误地切块（single_shared 1.5%，交接包原版 84.8%），但 eQTL 信号弱时常漏掉第二个信号。
 
-1. **检出率**：误报率都控制在 5% 时，block-coloc（条件 lead 选择）检出 93.3% 的共定位位点，高于整区域 coloc.abf（91.2%，配对差 +2.2 个百分点，95% CI +1.1 至 +3.2）和 coloc.susie + fallback（90.1%）。提升主要来自 double_shared2（94.2% 对 89.5%）。但它低于 coloc.signals (cond)（95.1%），与 block-coloc（交接包原版，94.2%）相近。
-2. **是否切块**：条件 lead 选择几乎不会把单信号位点错误地切块（single_shared 1.5%，交接包原版为 84.8%）；但 eQTL 信号较弱（N = 1,000，\|z\| ≈ 3.9）时常漏掉第二个信号，single_double_shared 只有 26.0% 切块。
-3. **最难的情况**：single_double_shared 中，当 eQTL 特有的信号比共享信号更显著时，所有方法的检出率都明显下降（coloc.abf 73.0%，block-coloc 条件 lead 选择 76.2%，coloc.susie + fallback 54.7%）。
+![第二段：检出率与误报率随 GWAS 强度、eQTL 强度和因果间 LD 的变化](docs/grid_lines.png)
 
-这是一个设定下的结果，测试窗口只有 6 个；详细数字、置信区间和注意事项见 [结果页](https://suranchen.github.io/bulk-block-coloc/04_results.html)。第二段（变强度、变 LD）待定。
+**第二段（一次只变一个因素，黑色粗线是本文方法）**：
+
+1. **GWAS 变强时误报率稳定**：GWAS q 增大到 2% 时，条件 lead 选择的误报率保持在约 4%，而边际 lead 选择升到 9.5%、交接包原版升到 15.7%。
+2. **eQTL 弱时最好，eQTL 强时被反超**：eQTL q = 0.75% 时检出率最高（82.4%）；eQTL q = 5% 时 coloc.signals (cond) 和 coloc.susie + fallback 更高（约 99% 对 97.3%）。
+3. **局限**：不同因果变异高度连锁时所有方法都难以区分（检出率降到约 50%，多数方法误报率升到约 40%，coloc.susie 约 16%）；只有 GWAS 有信号时，基于 coloc.abf 的方法（包括本文方法）误报约 10%–13%，coloc.signals 约 4%，coloc.susie 为 0%。
+
+测试窗口只有 6 个；详细数字、置信区间和注意事项见 [结果](https://suranchen.github.io/bulk-block-coloc/04_results.html)。
 
 ## 内容
 
@@ -26,6 +30,7 @@
 | `R/` | 方法与模拟代码：`block_coloc.R`、`methods.R`、`simulate_bulk.R` |
 | `scripts/` | 运行脚本：`run.R`、`evaluate.R`、`test_synthetic.R` |
 | `results/stage1/` | 第一段（主设置）的汇总结果和图 |
+| `results/stage2/` | 第二段（一次只变一个因素）的汇总结果和图 |
 
 报告的方法：
 

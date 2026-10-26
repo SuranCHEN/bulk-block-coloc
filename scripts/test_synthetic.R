@@ -88,7 +88,7 @@ for (s in bulk_scenarios$scenario) for (t in names(tiers)) {
     cz <- tryCatch(bulk_sample_causal(bank, s, t, .bulk_seed("t", s, t, r), cfg), error = function(e) e)
     if (inherits(cz, "error")) { bad <- c(bad, paste(s, t, conditionMessage(cz))); next }
     if (length(cz$gwas) != sc$n_causal_gwas || length(cz$eqtl) != sc$n_causal_eqtl) bad <- c(bad, paste(s, t, "count"))
-    exp_shared <- switch(s, A_A = 1, A_AB = 1, AB_AB = 2, A_B = 0, AB_CD = 0)
+    exp_shared <- switch(s, A_A = 1, A_AB = 1, AB_AB = 2, A_B = 0, AB_CD = 0, gwas_only = 0, null_both = 0)
     if (length(cz$shared) != exp_shared) bad <- c(bad, paste(s, t, "shared"))
     pr <- abs(cz$pair_r)
     if (length(pr) && any(pr < tiers[[t]][1] | pr >= tiers[[t]][2])) bad <- c(bad, paste(s, t, "tier", paste(round(pr, 2), collapse = ",")))
@@ -96,7 +96,7 @@ for (s in bulk_scenarios$scenario) for (t in names(tiers)) {
     if (any(c(bank$gwas$maf[unique(c(cz$gwas, cz$eqtl))], bank$qtl$maf[unique(c(cz$gwas, cz$eqtl))]) < cfg$maf_min)) bad <- c(bad, paste(s, t, "maf"))
   }
 }
-check("2 causal sampling (5 scenarios x tiers x 30 draws)", !length(bad), if (length(bad)) paste(head(unique(bad), 5), collapse = "; ") else "")
+check("2 causal sampling (7 scenarios x tiers x 30 draws)", !length(bad), if (length(bad)) paste(head(unique(bad), 5), collapse = "; ") else "")
 
 # 3. OLS z and null variance
 dr <- bulk_draws(bank, 31263287, "A_B", 1)

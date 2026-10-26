@@ -39,3 +39,19 @@ double_distinct	not shared	coloc.susie	-	600	28	4.7%	[3.2%, 6.7%]	47.3%	0.0%
 double_distinct	not shared	coloc.susie + coloc.abf fallback	-	600	19	3.2%	[2.0%, 4.9%]	0.0%	0.0%
 double_distinct	not shared	coloc.signals (mask)	-	600	28	4.7%	[3.2%, 6.7%]	0.2%	0.0%
 double_distinct	not shared	coloc.signals (cond)	-	600	34	5.7%	[4.1%, 7.8%]	0.0%	0.0%
+gwas_only	not shared (extra)	block-coloc (conditional lead selection, proposed)	1e-04	600	71	11.8%	[9.5%, 14.7%]	0.2%	0.2%
+gwas_only	not shared (extra)	block-coloc (marginal lead selection)	1e-05	600	53	8.8%	[6.8%, 11.4%]	0.0%	0.0%
+gwas_only	not shared (extra)	block-coloc (original handoff)	1e-05	600	53	8.8%	[6.8%, 11.4%]	6.0%	13.5%
+gwas_only	not shared (extra)	coloc.abf, whole region	-	600	53	8.8%	[6.8%, 11.4%]	0.0%	0.0%
+gwas_only	not shared (extra)	coloc.susie	-	600	1	0.2%	[0.0%, 0.9%]	99.8%	0.0%
+gwas_only	not shared (extra)	coloc.susie + coloc.abf fallback	-	600	56	9.3%	[7.3%, 11.9%]	0.0%	0.0%
+gwas_only	not shared (extra)	coloc.signals (mask)	-	600	21	3.5%	[2.3%, 5.3%]	0.0%	0.0%
+gwas_only	not shared (extra)	coloc.signals (cond)	-	600	21	3.5%	[2.3%, 5.3%]	0.0%	0.0%
+null_both	not shared (extra)	block-coloc (conditional lead selection, proposed)	1e-04	600	0	0.0%	[0.0%, 0.6%]	0.0%	0.0%
+null_both	not shared (extra)	block-coloc (marginal lead selection)	1e-05	600	0	0.0%	[0.0%, 0.6%]	0.0%	0.0%
+null_both	not shared (extra)	block-coloc (original handoff)	1e-05	600	0	0.0%	[0.0%, 0.6%]	26.3%	32.8%
+null_both	not shared (extra)	coloc.abf, whole region	-	600	0	0.0%	[0.0%, 0.6%]	0.0%	0.0%
+null_both	not shared (extra)	coloc.susie	-	600	0	0.0%	[0.0%, 0.6%]	100.0%	0.0%
+null_both	not shared (extra)	coloc.susie + coloc.abf fallback	-	600	0	0.0%	[0.0%, 0.6%]	0.0%	0.0%
+null_both	not shared (extra)	coloc.signals (mask)	-	600	0	0.0%	[0.0%, 0.6%]	0.0%	0.0%
+null_both	not shared (extra)	coloc.signals (cond)	-	600	0	0.0%	[0.0%, 0.6%]	0.0%	0.0%

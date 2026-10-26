@@ -33,6 +33,12 @@
 #   AB_AB  AB-AB  GWAS A,B,  eQTL A,B    both shared  truth 1
 #   A_B    A-B    GWAS A,    eQTL B      not shared   truth 0
 #   AB_CD  AB-CD  GWAS A,B,  eQTL C,D    not shared   truth 0
+# Extra negatives (added 2026-10-25; reported for the false-positive rate only,
+# never used to calibrate the PP4 cut-offs):
+#   gwas_only     GWAS A,    eQTL none                truth 0
+#   null_both     GWAS none, eQTL none                truth 0
+# Report names (evaluate.R): A_A single_shared, A_AB single_double_shared,
+# AB_AB double_shared2, A_B single_distinct, AB_CD double_distinct.
 #
 # LD between causal SNPs (absolute r in the GWAS in-sample LD):
 #   "tier pair(s)": A-B in A_AB, AB_AB, A_B; A-B and C-D in AB_CD.
@@ -61,12 +67,13 @@ bulk_default_config <- function() {
 }
 
 bulk_scenarios <- data.frame(
-  scenario = c("A_A", "A_AB", "AB_AB", "A_B", "AB_CD"),
-  label = c("A-A", "A-AB", "AB-AB", "A-B", "AB-CD"),
-  truth = c(1L, 1L, 1L, 0L, 0L),
-  n_causal_gwas = c(1L, 1L, 2L, 1L, 2L),
-  n_causal_eqtl = c(1L, 2L, 2L, 1L, 2L),
-  has_tier_pair = c(FALSE, TRUE, TRUE, TRUE, TRUE),
+  scenario = c("A_A", "A_AB", "AB_AB", "A_B", "AB_CD", "gwas_only", "null_both"),
+  label = c("A-A", "A-AB", "AB-AB", "A-B", "AB-CD", "gwas_only", "null_both"),
+  truth = c(1L, 1L, 1L, 0L, 0L, 0L, 0L),
+  n_causal_gwas = c(1L, 1L, 2L, 1L, 2L, 1L, 0L),
+  n_causal_eqtl = c(1L, 2L, 2L, 1L, 2L, 0L, 0L),
+  has_tier_pair = c(FALSE, TRUE, TRUE, TRUE, TRUE, FALSE, FALSE),
+  calibration_negative = c(FALSE, FALSE, FALSE, TRUE, TRUE, FALSE, FALSE),
   stringsAsFactors = FALSE
 )
 
@@ -142,9 +149,11 @@ bulk_sample_causal <- function(bank, scenario, tier = "low", seed, cfg = bulk_de
   far <- function(cand, chosen) if (!length(chosen)) rep(TRUE, length(cand)) else
     apply(R[cand, chosen, drop = FALSE] < cfg$r_other_max, 1, all)
   pick <- function(cand) if (length(cand)) cand[sample.int(length(cand), 1L)] else NA_integer_
+  if (scenario == "null_both") { g <- integer(); e <- integer() } else
   for (attempt in seq_len(cfg$max_draw_attempts)) {
     A <- pick(elig)
     if (scenario == "A_A") { g <- A; e <- A; break }
+    if (scenario == "gwas_only") { g <- A; e <- integer(); break }
     others <- setdiff(elig, A)
     B <- pick(others[in_tier(others, A)])
     if (is.na(B)) next
@@ -163,9 +172,9 @@ bulk_sample_causal <- function(bank, scenario, tier = "low", seed, cfg = bulk_de
     g <- c(A, B); e <- c(C, D)
     break
   }
-  if (attempt == cfg$max_draw_attempts && !exists("g", inherits = FALSE))
+  if (!exists("g", inherits = FALSE))
     stop("could not draw causal SNPs for ", scenario, " tier ", tier)
-  pair_r <- switch(scenario, A_A = numeric(), A_AB = bank$ld_gwas[e[1], e[2]],
+  pair_r <- switch(scenario, A_A = numeric(), gwas_only = numeric(), null_both = numeric(), A_AB = bank$ld_gwas[e[1], e[2]],
                    AB_AB = bank$ld_gwas[g[1], g[2]], A_B = bank$ld_gwas[g, e],
                    AB_CD = c(bank$ld_gwas[g[1], g[2]], bank$ld_gwas[e[1], e[2]]))
   list(scenario = scenario, tier = tier, gwas = g, eqtl = e,

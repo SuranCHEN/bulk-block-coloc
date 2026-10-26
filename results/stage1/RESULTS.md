@@ -1,19 +1,21 @@
 # Bulk block-coloc: main comparison (stage 1)
 
-Generated 2026-10-25 18:02. Setting: GWAS N 20,000, q 0.3% per causal SNP; eQTL N 1,000, q 1.5% per causal SNP; causal |r| < 0.2.
+Generated 2026-10-26 16:25. Setting: GWAS N 20,000, q 0.3% per causal SNP; eQTL N 1,000, q 1.5% per causal SNP; causal |r| < 0.2.
 Calibration windows: 31263287, 37199593, 39694225, 42313324, 44324730, 46518082. Test windows: 21059630, 24009444, 26904965, 29033189, 33343871, 34894283.
 Loci: 3000 calibration, 3000 test (per method). Target FPR 5% on calibration windows (negatives: single_distinct and double_distinct).
+Extra negatives gwas_only and null_both are reported for the false-positive rate only (not calibrated, not pooled).
 
 ## Three-line conclusion
 
 1. **检出率**：误报率在校准窗口上匹配到 5%（测试窗口实际为 4.1%–4.8%，coloc.susie 为 2.8%）时，block-coloc（条件 lead 选择，本文方法）检出 93.3% 的共定位位点，高于整区域 coloc.abf 的 91.2%（同一批位点配对差 +2.2 个百分点，95% CI +1.1 至 +3.2）和 coloc.susie + coloc.abf fallback 的 90.1%（+3.2，+2.1 至 +4.4）。提升主要来自 double_shared2（94.2% 对 89.5%），single_shared 上没有损失（98.2% 对 97.8%）。但它没有超过 coloc.signals (cond)（95.1%），与 block-coloc（交接包原版，94.2%）也相近。
-2. **是否切块**：条件 lead 选择基本消除了单信号位点被误切块：在 single_shared、single_distinct 上走 block 的比例为 1.5% 和 0.3%；边际 lead 选择为 3.7% 和 4.3%；交接包原版在 single_shared 上为 84.8%。但多信号常被漏判：single_double_shared 只有 26.0% 走 block，double_shared2 为 78.8%。原因是 eQTL 的第二个信号（N = 1,000，因果 |z| ≈ 3.9）经常过不了 lead 阈值。
-3. **不共享信号更强时**：single_double_shared 中，当 eQTL 特有的因果变异比共享的因果变异更显著时，所有方法的检出率都明显下降（整区域 coloc.abf 73.0%、block-coloc（条件 lead 选择）76.2%、coloc.susie + fallback 54.7%、coloc.signals (cond) 82.1%；共享变异更显著时，除 coloc.susie 外各方法为 98.0%–100%）。eQTL 信号这么弱时，SuSiE 在 45%–67% 的位点上找不到 credible set，所以不加 fallback 的 coloc.susie 只检出 41.3%。
+2. **是否切块**：条件 lead 选择基本消除了单信号位点被误切块：在 single_shared、single_distinct 上走 block 的比例为 1.5% 和 0.3%；边际 lead 选择为 3.7% 和 4.3%；交接包原版在 single_shared 上为 84.8%。但多信号常被漏判：single_double_shared 只有 26.0% 走 block，double_shared2 为 78.8%，因为 eQTL 的第二个信号（N = 1,000，因果 |z| ≈ 3.9）经常过不了 lead 阈值。single_double_shared 中当 eQTL 特有的信号比共享信号更显著时，所有方法检出率都明显下降（整区域 coloc.abf 73.0%，block-coloc（条件 lead 选择）76.2%，coloc.susie + fallback 54.7%）。
+3. **只有一个性状有信号时的误报**（额外阴性，未用于定判定线）：gwas_only 上，基于 coloc.abf 的方法误报 8.8%–11.8%，超过目标 5%；block-coloc（条件 lead 选择）为 11.8%，略高于整区域 coloc.abf 的 8.8%，原因是它的判定线更低（0.094 对 0.109），这些位点上两者给出的 PP4 在 600 个中有 599 个完全相同。coloc.signals 为 3.5%，coloc.susie 为 0.2%；null_both 上所有方法均为 0%。
 
 ## 1. Main table (test windows, frozen cut-offs)
 
 n_positive = loci called colocalised (PP4 above the method's cut-off). For shared scenarios rate is the detection rate;
 for not-shared scenarios it is the false-positive rate. Denominators include every locus; no result counts as not called.
+'not shared (extra)' rows (gwas_only, null_both) use the same frozen cut-offs but were not used to set them.
 
 | scenario | truth | method | lead_p | n_total | n_positive | rate | 95% CI | no_call_rate | branch_block |
 |---|---|---|---|---|---|---|---|---|---|
@@ -57,6 +59,38 @@ for not-shared scenarios it is the false-positive rate. Denominators include eve
 | double_distinct | not shared | coloc.susie + coloc.abf fallback | - | 600 |  19 | 3.2% | [2.0%, 4.9%] | 0.0% | 0.0% |
 | double_distinct | not shared | coloc.signals (mask) | - | 600 |  28 | 4.7% | [3.2%, 6.7%] | 0.2% | 0.0% |
 | double_distinct | not shared | coloc.signals (cond) | - | 600 |  34 | 5.7% | [4.1%, 7.8%] | 0.0% | 0.0% |
+| gwas_only | not shared (extra) | block-coloc (conditional lead selection, proposed) | 1e-04 | 600 |  71 | 11.8% | [9.5%, 14.7%] | 0.2% | 0.2% |
+| gwas_only | not shared (extra) | block-coloc (marginal lead selection) | 1e-05 | 600 |  53 | 8.8% | [6.8%, 11.4%] | 0.0% | 0.0% |
+| gwas_only | not shared (extra) | block-coloc (original handoff) | 1e-05 | 600 |  53 | 8.8% | [6.8%, 11.4%] | 6.0% | 13.5% |
+| gwas_only | not shared (extra) | coloc.abf, whole region | - | 600 |  53 | 8.8% | [6.8%, 11.4%] | 0.0% | 0.0% |
+| gwas_only | not shared (extra) | coloc.susie | - | 600 |   1 | 0.2% | [0.0%, 0.9%] | 99.8% | 0.0% |
+| gwas_only | not shared (extra) | coloc.susie + coloc.abf fallback | - | 600 |  56 | 9.3% | [7.3%, 11.9%] | 0.0% | 0.0% |
+| gwas_only | not shared (extra) | coloc.signals (mask) | - | 600 |  21 | 3.5% | [2.3%, 5.3%] | 0.0% | 0.0% |
+| gwas_only | not shared (extra) | coloc.signals (cond) | - | 600 |  21 | 3.5% | [2.3%, 5.3%] | 0.0% | 0.0% |
+| null_both | not shared (extra) | block-coloc (conditional lead selection, proposed) | 1e-04 | 600 |   0 | 0.0% | [0.0%, 0.6%] | 0.0% | 0.0% |
+| null_both | not shared (extra) | block-coloc (marginal lead selection) | 1e-05 | 600 |   0 | 0.0% | [0.0%, 0.6%] | 0.0% | 0.0% |
+| null_both | not shared (extra) | block-coloc (original handoff) | 1e-05 | 600 |   0 | 0.0% | [0.0%, 0.6%] | 26.3% | 32.8% |
+| null_both | not shared (extra) | coloc.abf, whole region | - | 600 |   0 | 0.0% | [0.0%, 0.6%] | 0.0% | 0.0% |
+| null_both | not shared (extra) | coloc.susie | - | 600 |   0 | 0.0% | [0.0%, 0.6%] | 100.0% | 0.0% |
+| null_both | not shared (extra) | coloc.susie + coloc.abf fallback | - | 600 |   0 | 0.0% | [0.0%, 0.6%] | 0.0% | 0.0% |
+| null_both | not shared (extra) | coloc.signals (mask) | - | 600 |   0 | 0.0% | [0.0%, 0.6%] | 0.0% | 0.0% |
+| null_both | not shared (extra) | coloc.signals (cond) | - | 600 |   0 | 0.0% | [0.0%, 0.6%] | 0.0% | 0.0% |
+
+## 1b. False-positive rate when at most one trait has a signal (test windows)
+
+gwas_only: GWAS has one causal variant, the eQTL has none. null_both: neither trait has a signal.
+Same frozen cut-offs as above; these loci were not used to set them.
+
+| method | gwas_only | null_both |
+|---|---|---|
+| block-coloc (conditional lead selection, proposed) | 11.8% [9.5%, 14.7%] | 0.0% [0.0%, 0.6%] |
+| block-coloc (marginal lead selection) | 8.8% [6.8%, 11.4%] | 0.0% [0.0%, 0.6%] |
+| block-coloc (original handoff) | 8.8% [6.8%, 11.4%] | 0.0% [0.0%, 0.6%] |
+| coloc.abf, whole region | 8.8% [6.8%, 11.4%] | 0.0% [0.0%, 0.6%] |
+| coloc.susie | 0.2% [0.0%, 0.9%] | 0.0% [0.0%, 0.6%] |
+| coloc.susie + coloc.abf fallback | 9.3% [7.3%, 11.9%] | 0.0% [0.0%, 0.6%] |
+| coloc.signals (mask) | 3.5% [2.3%, 5.3%] | 0.0% [0.0%, 0.6%] |
+| coloc.signals (cond) | 3.5% [2.3%, 5.3%] | 0.0% [0.0%, 0.6%] |
 
 ## 2. Pooled over scenarios (test windows)
 
@@ -142,16 +176,22 @@ should_go: block when either trait has 2 causal SNPs, whole otherwise. leads_mat
 | block-coloc (conditional lead selection, proposed) | double_shared2 | 2+2 | block | 600 | 78.8% | 78.8% | 22.5% | 2+1 |
 | block-coloc (conditional lead selection, proposed) | single_distinct | 1+1 | whole | 600 | 0.3% | 99.7% | 58.2% | 1+1 |
 | block-coloc (conditional lead selection, proposed) | double_distinct | 2+2 | block | 600 | 81.0% | 81.0% | 23.7% | 2+1 |
+| block-coloc (conditional lead selection, proposed) | gwas_only | 1+0 | whole | 600 | 0.2% | 99.8% | 97.7% | 1+0 |
+| block-coloc (conditional lead selection, proposed) | null_both | 0+0 | whole | 600 | 0.0% | 100.0% | 96.3% | 0+0 |
 | block-coloc (marginal lead selection) | single_shared | 1+1 | whole | 600 | 3.7% | 96.3% | 35.8% | 1+0 |
 | block-coloc (marginal lead selection) | single_double_shared | 1+2 | block | 600 | 21.7% | 21.7% | 14.5% | 1+1 |
 | block-coloc (marginal lead selection) | double_shared2 | 2+2 | block | 600 | 56.2% | 56.2% | 9.2% | 2+1 |
 | block-coloc (marginal lead selection) | single_distinct | 1+1 | whole | 600 | 4.3% | 95.7% | 31.3% | 1+0 |
 | block-coloc (marginal lead selection) | double_distinct | 2+2 | block | 600 | 59.8% | 59.8% | 9.3% | 2+1 |
+| block-coloc (marginal lead selection) | gwas_only | 1+0 | whole | 600 | 0.0% | 100.0% | 89.5% | 1+0 |
+| block-coloc (marginal lead selection) | null_both | 0+0 | whole | 600 | 0.0% | 100.0% | 99.5% | 0+0 |
 | block-coloc (original handoff) | single_shared | 1+1 | whole | 600 | 84.8% | 15.2% | 78.3% | 1+1 |
 | block-coloc (original handoff) | single_double_shared | 1+2 | block | 600 | 56.8% | 56.8% | 25.7% | 1+1 |
 | block-coloc (original handoff) | double_shared2 | 2+2 | block | 600 | 94.2% | 94.2% | 17.8% | 2+1 |
 | block-coloc (original handoff) | single_distinct | 1+1 | whole | 600 | 3.2% | 96.8% | 76.0% | 1+1 |
 | block-coloc (original handoff) | double_distinct | 2+2 | block | 600 | 28.0% | 28.0% | 17.7% | 2+1 |
+| block-coloc (original handoff) | gwas_only | 1+0 | whole | 600 | 13.5% | 86.5% | 0.0% | 1+2 |
+| block-coloc (original handoff) | null_both | 0+0 | whole | 600 | 32.8% | 67.2% | 0.0% | 2+2 |
 
 ## 6. single_double_shared split by which eQTL signal is stronger (test windows)
 
@@ -212,6 +252,8 @@ Expected causal |z| about sqrt(N q): GWAS 7.7, eQTL 3.9.
 | double_shared2 | 600 | 7.8 | 3.9 | 0.03 | 0.0% | 49.3% |
 | single_distinct | 600 | 7.7 | 3.9 | 0.03 | 0.0% | 67.2% |
 | double_distinct | 600 | 7.7 | 3.8 | 0.03 | 0.0% | 47.3% |
+| gwas_only | 600 | 7.8 | NA | NA | 0.0% | 99.8% |
+| null_both | 600 | NA | NA | NA | 99.7% | 99.8% |
 
 ## Figures
 

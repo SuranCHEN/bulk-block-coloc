@@ -52,12 +52,16 @@ BLOCK0 <- c("V0_handoff", "V1_block_any", "V2_gate_marginal", "V3_gate_condition
 # whole-locus PP4 instead of giving no result.
 BLOCK <- c(BLOCK0, paste0(BLOCK0, "_fb"))
 OTHER <- c("whole_abf", "susie_raw", "susie_fallback", "signals_mask", "signals_cond")
-SCEN <- c("A_A", "A_AB", "AB_AB", "A_B", "AB_CD")
+SCEN <- c("A_A", "A_AB", "AB_AB", "A_B", "AB_CD", "gwas_only", "null_both")
 # Scenario names shown in reports (the group's earlier bulk naming; user decision
 # 2026-10-25). Internal ids (A_A, ...) stay in the score files.
 SCEN_LABEL <- c(A_A = "single_shared", A_AB = "single_double_shared", AB_AB = "double_shared2",
-                A_B = "single_distinct", AB_CD = "double_distinct")
+                A_B = "single_distinct", AB_CD = "double_distinct", gwas_only = "gwas_only", null_both = "null_both")
 SCEN_POS <- c("A_A", "A_AB", "AB_AB"); SCEN_NEG <- c("A_B", "AB_CD")
+# Extra negatives (signal in at most one trait; added 2026-10-25): reported for the
+# false-positive rate only. They are never used to calibrate cut-offs or lead
+# thresholds, and are not pooled into TPR / FPR / AUC, so stage-1 numbers are unchanged.
+SCEN_EXTRA <- c("gwas_only", "null_both"); SCEN_CORE <- c(SCEN_POS, SCEN_NEG)
 SYM <- c(1e-3, 1e-4, 1e-5)
 
 # Reported block-coloc versions (user decision 2026-10-25): conditional lead
@@ -84,6 +88,14 @@ name_of <- function(k, short = FALSE) { fb <- grepl("_fb$", sub("@.*", "", k))
          ifelse(legacy_of(k), " [earlier bulk thresholds]", "")) }
 lead_of <- function(k) ifelse(grepl("@", k), sub("/", " / ", sub(".*@", "", k)), "-")
 label_of <- function(k) name_of(k)
+# One fixed colour per method in every figure; the proposed method is black and thick.
+PAL <- c(V3_gate_conditional = "#000000", V2_gate_marginal = "#E69F00", V0_handoff = "#8C510A",
+         V1_block_any = "#999999", V4_cond_block = "#666666",
+         whole_abf = "#0072B2", susie_raw = "#9E9E9E", susie_fallback = "#009E73",
+         signals_mask = "#CC79A7", signals_cond = "#D55E00")
+col_of <- function(k) unname(PAL[base_of(k)])
+lwd_of <- function(k) ifelse(base_of(k) == "V3_gate_conditional", 3.5, 2)
+lty_of <- function(k) ifelse(base_of(k) %in% BLOCK0, 1, 2)
 rd <- function(f) utils::read.delim(gzfile(file.path(out, f)), stringsAsFactors = FALSE)
 fmt <- function(x, d = 3) ifelse(is.na(x), "NA", formatC(x, format = "f", digits = d))
 pct <- function(x) ifelse(is.na(x), "NA", sprintf("%.1f%%", 100 * x))
@@ -188,7 +200,7 @@ evaluate_main <- function() {
   d <- load_scores("main")
   loci <- rd("loci_main.tsv.gz")
   loci$id <- paste(loci$window, loci$scenario, loci$rep, loci$q_gwas, loci$q_eqtl, loci$tier, sep = "|")
-  cal <- d[d$set == "calibration", ]; tst <- d[d$set == "test", ]
+  cal <- d[d$set == "calibration" & d$scenario %in% SCEN_CORE, ]; tst <- d[d$set == "test", ]
   keys <- unique(d$key)
   th <- do.call(rbind, lapply(keys, function(k) {
     x <- cal[cal$key == k, ]
@@ -212,21 +224,23 @@ evaluate_main <- function() {
   FB_KEYS <- sel[match(paste0(REPORT_BLOCK, "_fb"), sub("@.*", "", sel))]
   LEG_KEYS <- th$key[th$legacy & th$method %in% REPORT_BLOCK]
   tst$call <- tst$score > th$cutoff[match(tst$key, th$key)]
-  ts <- tst[tst$key %in% c(MAIN_KEYS, FB_KEYS, LEG_KEYS), ]
-  tm <- ts[ts$key %in% MAIN_KEYS, ]
+  ts_all <- tst[tst$key %in% c(MAIN_KEYS, FB_KEYS, LEG_KEYS), ]
+  tm_all <- ts_all[ts_all$key %in% MAIN_KEYS, ]
+  ts <- ts_all[ts_all$scenario %in% SCEN_CORE, ]; tm <- tm_all[tm_all$scenario %in% SCEN_CORE, ]
 
   L <- c("# Bulk block-coloc: main comparison (stage 1)", "",
          sprintf("Generated %s. Setting: GWAS N 20,000, q 0.3%% per causal SNP; eQTL N 1,000, q 1.5%% per causal SNP; causal |r| < 0.2.",
                  format(Sys.time(), "%Y-%m-%d %H:%M")),
          sprintf("Calibration windows: %s. Test windows: %s.", paste(sort(unique(cal$window)), collapse = ", "), paste(sort(unique(tst$window)), collapse = ", ")),
          sprintf("Loci: %d calibration, %d test (per method). Target FPR %.0f%% on calibration windows (negatives: single_distinct and double_distinct).",
-                 length(unique(cal$id)), length(unique(tst$id)), 100 * FPR), "",
+                 length(unique(cal$id)), length(unique(tst[tst$scenario %in% SCEN_CORE, ]$id)), 100 * FPR),
+         "Extra negatives gwas_only and null_both are reported for the false-positive rate only (not calibrated, not pooled).", "",
          "## Three-line conclusion", "", conclusions("main"), "")
 
   # 1. main table in the AGENTS.md format: scenario x method, test windows
   mt <- do.call(rbind, lapply(SCEN, function(s) do.call(rbind, lapply(MAIN_KEYS, function(k) {
-    x <- tm[tm$scenario == s & tm$key == k, ]
-    data.frame(scenario = SCEN_LABEL[s], truth = if (s %in% SCEN_POS) "shared" else "not shared", method = name_of(k), lead_p = lead_of(k),
+    x <- tm_all[tm_all$scenario == s & tm_all$key == k, ]
+    data.frame(scenario = SCEN_LABEL[s], truth = if (s %in% SCEN_POS) "shared" else if (s %in% SCEN_EXTRA) "not shared (extra)" else "not shared", method = name_of(k), lead_p = lead_of(k),
                n_total = nrow(x), n_positive = sum(x$call), rate = pct(mean(x$call)), CI95 = ci_txt(x$call),
                no_call_rate = pct(mean(x$no_call)), branch_block = pct(mean(x$branch == "block", na.rm = TRUE)))
   }))))
@@ -234,8 +248,17 @@ evaluate_main <- function() {
   write.table(mt, file.path(out, "main_table.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
   L <- c(L, "## 1. Main table (test windows, frozen cut-offs)", "",
          "n_positive = loci called colocalised (PP4 above the method's cut-off). For shared scenarios rate is the detection rate;",
-         "for not-shared scenarios it is the false-positive rate. Denominators include every locus; no result counts as not called.", "",
+         "for not-shared scenarios it is the false-positive rate. Denominators include every locus; no result counts as not called.",
+         "'not shared (extra)' rows (gwas_only, null_both) use the same frozen cut-offs but were not used to set them.", "",
          md_table(mt))
+  # 1b. extra negatives, side by side
+  xt <- do.call(rbind, lapply(MAIN_KEYS, function(k) cbind(data.frame(method = name_of(k)),
+    as.data.frame(setNames(lapply(SCEN_EXTRA, function(s) { x <- tm_all[tm_all$key == k & tm_all$scenario == s, ]
+      if (!nrow(x)) "-" else rate_ci(x$call) }), SCEN_LABEL[SCEN_EXTRA])))))
+  write.table(xt, file.path(out, "extra_negatives_table.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+  L <- c(L, "## 1b. False-positive rate when at most one trait has a signal (test windows)", "",
+         "gwas_only: GWAS has one causal variant, the eQTL has none. null_both: neither trait has a signal.",
+         "Same frozen cut-offs as above; these loci were not used to set them.", "", md_table(xt))
 
   # 2. pooled
   pt <- do.call(rbind, lapply(MAIN_KEYS, function(k) cbind(data.frame(method = name_of(k), lead_p = lead_of(k)), pooled(tm[tm$key == k, ]))))
@@ -259,7 +282,7 @@ evaluate_main <- function() {
 
   # 5. branch choice
   gk <- MAIN_KEYS[base_of(MAIN_KEYS) %in% BLOCK0]
-  gt <- gate_table(tm, gk)
+  gt <- gate_table(tm_all, gk)
   write.table(gt, file.path(out, "gate_table.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
   L <- c(L, "## 5. Branch choice: split into blocks or not (test windows)", "",
          "should_go: block when either trait has 2 causal SNPs, whole otherwise. leads_match_truth: the method's lead counts",
@@ -304,25 +327,26 @@ evaluate_main <- function() {
          sprintf("Expected causal |z| about sqrt(N q): GWAS %.1f, eQTL %.1f.", sqrt(20000 * 0.003), sqrt(1000 * 0.015)), "", md_table(inp))
 
   # figures
-  cols <- grDevices::hcl.colors(length(MAIN_KEYS), "Dark 3")
-  png(file.path(out, "matched_fpr_by_scenario.png"), width = 1600, height = 1000, res = 130)
-  m <- sapply(MAIN_KEYS, function(k) sapply(SCEN, function(s) mean(tm$call[tm$key == k & tm$scenario == s])))
+  cols <- col_of(MAIN_KEYS)
+  png(file.path(out, "matched_fpr_by_scenario.png"), width = 1900, height = 1000, res = 130)
+  m <- sapply(MAIN_KEYS, function(k) sapply(SCEN, function(s) { v <- tm_all$call[tm_all$key == k & tm_all$scenario == s]; if (length(v)) mean(v) else NA }))
   par(mar = c(4, 4, 3, 1))
   barplot(t(m), beside = TRUE, col = cols, names.arg = SCEN_LABEL[SCEN], ylim = c(0, 1.32), axes = FALSE,
-          ylab = "Share called colocalised", main = "Test windows at matched 5% FPR (left 3: shared; right 2: not shared)")
+          ylab = "Share called colocalised", main = "Test windows at matched 5% FPR (left 3: shared; middle 2: not shared; right 2: extra negatives)")
   axis(2, at = seq(0, 1, 0.2))
-  abline(v = 3 * (length(MAIN_KEYS) + 1) + 0.5, lty = 2); abline(h = FPR, lty = 3)
+  abline(v = 3 * (length(MAIN_KEYS) + 1) + 0.5, lty = 2); abline(v = 5 * (length(MAIN_KEYS) + 1) + 0.5, lty = 3, col = "grey50"); abline(h = FPR, lty = 3)
   legend("top", legend = label_of(MAIN_KEYS), fill = cols, bty = "n", cex = 0.7, ncol = 2)
   dev.off()
   png(file.path(out, "roc_test.png"), width = 1100, height = 1000, res = 140)
   plot(NA, xlim = c(0, 1), ylim = c(0, 1), xlab = "False-positive rate", ylab = "Detection rate",
        main = "ROC on test windows (main setting)"); abline(0, 1, lty = 3, col = "grey60"); abline(v = FPR, lty = 2, col = "grey60")
-  for (i in seq_along(MAIN_KEYS)) { x <- tm[tm$key == MAIN_KEYS[i], ]
+  top <- base_of(MAIN_KEYS) == "V3_gate_conditional"
+  for (i in c(which(!top), which(top))) { x <- tm[tm$key == MAIN_KEYS[i], ]
     th_grid <- sort(unique(c(Inf, x$score, -Inf)), decreasing = TRUE)
     s1 <- x$score[x$truth == 1]; s0 <- x$score[x$truth == 0]
     lines(vapply(th_grid, function(t) mean(s0 >= t), 0), vapply(th_grid, function(t) mean(s1 >= t), 0),
-          col = cols[i], lwd = 2, lty = if (base_of(MAIN_KEYS[i]) %in% BLOCK0) 1 else 2) }
-  legend("bottomright", legend = label_of(MAIN_KEYS), col = cols, lwd = 2,
+          col = cols[i], lwd = lwd_of(MAIN_KEYS[i]), lty = lty_of(MAIN_KEYS[i])) }
+  legend("bottomright", legend = label_of(MAIN_KEYS), col = cols, lwd = lwd_of(MAIN_KEYS),
          lty = ifelse(base_of(MAIN_KEYS) %in% BLOCK0, 1, 2), bty = "n", cex = 0.6)
   dev.off()
   L <- c(L, "## Figures", "", "- Main figure: `matched_fpr_by_scenario.png`", "- `roc_test.png`", "",
@@ -343,9 +367,18 @@ evaluate_grid <- function() {
   d <- d[d$set == "test" & d$key %in% sel, ]
   d$call <- d$score > th$cutoff[match(d$key, th$key)]
   keys <- c(sel[match(REPORT_BLOCK, sub("@.*", "", sel))], OTHER); keys <- keys[!is.na(keys)]
+  dx <- d[d$scenario %in% SCEN_EXTRA, ]          # extra negatives, reported separately
+  d <- d[d$scenario %in% SCEN_CORE, ]            # TPR / FPR / AUC use the core scenarios only
   one <- function(x) data.frame(TPR = mean(x$call[x$truth == 1]), FPR = mean(x$call[x$truth == 0]),
                                 AUC = if (length(unique(x$truth)) == 2) auc(x$score, x$truth) else NA,
                                 n_pos = sum(x$truth == 1), n_neg = sum(x$truth == 0))
+  xneg <- function(x, vary) { if (!nrow(x)) return(data.frame(note = "none"))
+    v <- sort(unique(x[[vary]]))
+    do.call(rbind, lapply(SCEN_EXTRA, function(sc) do.call(rbind, lapply(v, function(val) {
+      y <- x[x$scenario == sc & x[[vary]] == val, ]
+      cbind(stats::setNames(data.frame(SCEN_LABEL[sc], val, sum(y$key == keys[1])), c("scenario", vary, "n")),
+            data.frame(setNames(lapply(keys, function(k) pct(mean(y$call[y$key == k]))), name_of(keys, short = TRUE)), check.names = FALSE))
+    })))) }
   cells <- unique(d[, c("q_gwas", "q_eqtl", "tier")])
   tab <- do.call(rbind, lapply(seq_len(nrow(cells)), function(i) do.call(rbind, lapply(keys, function(k) {
     x <- d[d$q_gwas == cells$q_gwas[i] & d$q_eqtl == cells$q_eqtl[i] & d$tier == cells$tier[i] & d$key == k, ]
@@ -357,11 +390,11 @@ evaluate_grid <- function() {
   qg <- tab[tab$q_eqtl == 0.015 & tab$tier == "low", ]
   qe <- tab[tab$q_gwas == 0.003 & tab$tier == "low", ]
   # LD tiers: pooled over the scenarios that have a causal pair (single_shared is not run for mid / high)
-  dt <- d[d$q_gwas == 0.003 & d$q_eqtl == 0.015 & d$scenario != "A_A", ]
+  dt <- d[d$q_gwas == 0.003 & d$q_eqtl == 0.015 & d$scenario %in% c("A_AB", "AB_AB", "A_B", "AB_CD"), ]
   tier_tab <- do.call(rbind, lapply(c("low", "mid", "high"), function(t) do.call(rbind, lapply(keys, function(k)
     cbind(data.frame(tier = t, method = k), one(dt[dt$tier == t & dt$key == k, ]))))))
   tier_tab$tier <- factor(tier_tab$tier, c("low", "mid", "high"))
-  by_sc <- do.call(rbind, lapply(c("low", "mid", "high"), function(t) do.call(rbind, lapply(setdiff(SCEN, "A_A"), function(s) {
+  by_sc <- do.call(rbind, lapply(c("low", "mid", "high"), function(t) do.call(rbind, lapply(c("A_AB", "AB_AB", "A_B", "AB_CD"), function(s) {
     x <- dt[dt$tier == t & dt$scenario == s, ]
     cbind(data.frame(tier = t, scenario = SCEN_LABEL[s], n = sum(x$key == keys[1])),
           data.frame(setNames(lapply(keys, function(k) pct(mean(x$call[x$key == k]))), name_of(keys, short = TRUE)), check.names = FALSE)) }))))
@@ -375,13 +408,18 @@ evaluate_grid <- function() {
          "## False-positive rate vs GWAS q", "", md_table(wide(qg, "q_gwas", "FPR")),
          "## Detection rate vs eQTL q (GWAS q 0.3%, low LD)", "", md_table(wide(qe, "q_eqtl", "TPR")),
          "## False-positive rate vs eQTL q", "", md_table(wide(qe, "q_eqtl", "FPR")),
+         "## False-positive rate when at most one trait has a signal (extra negatives, not used for calibration)", "",
+         "gwas_only: GWAS has one causal variant, the eQTL has none. null_both: neither trait has a signal.", "",
+         "### vs GWAS q (eQTL q 1.5%)", "", md_table(xneg(dx[dx$q_eqtl == 0.015, ], "q_gwas")),
+         "### vs eQTL q (GWAS q 0.3%)", "", md_table(xneg(dx[dx$q_gwas == 0.003, ], "q_eqtl")),
          "## LD between causal SNPs (main strengths; single_double_shared, double_shared2 pooled for TPR; single_distinct, double_distinct for FPR)", "",
          "low |r| < 0.2; mid 0.32-0.63; high 0.63-0.9.", "",
          md_table(wide(tier_tab, "tier", "TPR")), md_table(wide(tier_tab, "tier", "FPR")),
          "### By scenario", "", md_table(by_sc), "### Branch choice by LD tier", "", md_table(gt))
-  cols <- grDevices::hcl.colors(length(keys), "Dark 3")
-  png(file.path(out, "grid_lines.png"), width = 1800, height = 1100, res = 130)
-  par(mfrow = c(2, 3))
+  cols <- col_of(keys)
+  png(file.path(out, "grid_lines.png"), width = 1800, height = 1300, res = 130)
+  layout(matrix(c(1:6, 7, 7, 7), 3, byrow = TRUE), heights = c(1, 1, 0.32))
+  par(mar = c(4.2, 4.2, 2.5, 1))
   specs <- list(list(qg, "q_gwas", "TPR"), list(qe, "q_eqtl", "TPR"), list(tier_tab, "tier", "TPR"),
                 list(qg, "q_gwas", "FPR"), list(qe, "q_eqtl", "FPR"), list(tier_tab, "tier", "FPR"))
   for (sp in specs) {
@@ -390,11 +428,14 @@ evaluate_grid <- function() {
     plot(NA, xlim = range(xv), ylim = c(0, if (y == "TPR") 1 else max(0.2, max(x[[y]], na.rm = TRUE))),
          log = if (v != "tier") "x" else "", xaxt = if (v == "tier") "n" else "s", xlab = v, ylab = y, main = paste(y, "vs", v))
     if (v == "tier") axis(1, 1:3, c("low", "mid", "high"))
-    for (i in seq_along(keys)) { z <- x[x$method == keys[i], ]; zx <- if (v == "tier") as.integer(z$tier) else z[[v]]
-      o <- order(zx); lines(zx[o], z[[y]][o], type = "b", col = cols[i], pch = 16, lty = if (base_of(keys[i]) %in% BLOCK0) 1 else 2) }
+    top <- base_of(keys) == "V3_gate_conditional"
+    for (i in c(which(!top), which(top))) { z <- x[x$method == keys[i], ]; zx <- if (v == "tier") as.integer(z$tier) else z[[v]]
+      o <- order(zx); lines(zx[o], z[[y]][o], type = "b", col = cols[i], pch = 16, lwd = lwd_of(keys[i]), lty = lty_of(keys[i])) }
     if (y == "FPR") abline(h = FPR, lty = 3)
   }
-  legend("topright", legend = label_of(keys), col = cols, lty = ifelse(base_of(keys) %in% BLOCK0, 1, 2), bty = "n", cex = .55)
+  par(mar = c(0, 0, 0, 0)); plot.new()
+  legend("center", legend = label_of(keys), col = cols, lwd = lwd_of(keys), lty = lty_of(keys), pch = 16,
+         bty = "n", cex = 1.05, ncol = 3, title = "Solid lines: block-coloc versions; dashed: comparison methods; dotted line: 5% FPR")
   dev.off()
   writeLines(c(L, "Figure: `grid_lines.png`"), file.path(out, "RESULTS_grid.md"))
   message("wrote ", file.path(out, "RESULTS_grid.md"))
