@@ -1,4 +1,4 @@
-# bulk 版 block-coloc
+# block coloc（bulk）
 
 在 GWAS × bulk eQTL 共定位中，一个区域里可能有多个独立信号，这时经典 coloc.abf 的“每个性状至多一个因果变异”假设不成立。
 本项目评估 **block-coloc**：只在确有多个独立信号时，用 LD 把区域切块、每块跑 coloc.abf；其余情况直接跑整区域 coloc.abf。
