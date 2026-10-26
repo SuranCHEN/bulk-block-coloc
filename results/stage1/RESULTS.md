@@ -1,6 +1,6 @@
 # Bulk block-coloc: main comparison (stage 1)
 
-Generated 2026-10-26 16:25. Setting: GWAS N 20,000, q 0.3% per causal SNP; eQTL N 1,000, q 1.5% per causal SNP; causal |r| < 0.2.
+Generated 2026-10-26 18:10. Setting: GWAS N 20,000, q 0.3% per causal SNP; eQTL N 1,000, q 1.5% per causal SNP; causal |r| < 0.2.
 Calibration windows: 31263287, 37199593, 39694225, 42313324, 44324730, 46518082. Test windows: 21059630, 24009444, 26904965, 29033189, 33343871, 34894283.
 Loci: 3000 calibration, 3000 test (per method). Target FPR 5% on calibration windows (negatives: single_distinct and double_distinct).
 Extra negatives gwas_only and null_both are reported for the false-positive rate only (not calibrated, not pooled).
@@ -258,6 +258,7 @@ Expected causal |z| about sqrt(N q): GWAS 7.7, eQTL 3.9.
 ## Figures
 
 - Main figure: `matched_fpr_by_scenario.png`
+- PP4 distribution by scenario and method: `pp4_distribution.png`
 - `roc_test.png`
 
 ## Reproduce

@@ -337,6 +337,37 @@ evaluate_main <- function() {
   abline(v = 3 * (length(MAIN_KEYS) + 1) + 0.5, lty = 2); abline(v = 5 * (length(MAIN_KEYS) + 1) + 0.5, lty = 3, col = "grey50"); abline(h = FPR, lty = 3)
   legend("top", legend = label_of(MAIN_KEYS), fill = cols, bty = "n", cex = 0.7, ncol = 2)
   dev.off()
+  # PP4 distribution: one panel per method, one strip per scenario, each point = one test locus.
+  set.seed(7)
+  png(file.path(out, "pp4_distribution.png"), width = 2200, height = 1300, res = 130)
+  layout(matrix(c(1:8, 9, 9, 9, 9), 3, byrow = TRUE), heights = c(1, 1, 0.16))
+  par(mar = c(6.5, 4, 3, 1))
+  sc_col <- ifelse(SCEN %in% SCEN_POS, "#1B7837", ifelse(SCEN %in% SCEN_EXTRA, "#E08214", "#B2182B"))
+  for (k in MAIN_KEYS) {
+    plot(NA, xlim = c(0.5, length(SCEN) + 0.5), ylim = c(-0.1, 1), xaxt = "n", yaxt = "n", xlab = "", ylab = "PP4",
+         main = name_of(k, short = TRUE), cex.main = 1.05)
+    axis(2, at = seq(0, 1, 0.2), las = 1); axis(2, at = -0.06, labels = "none", las = 1, tick = FALSE, cex.axis = 0.8)
+    axis(1, at = seq_along(SCEN), labels = SCEN_LABEL[SCEN], las = 2, cex.axis = 0.8)
+    abline(h = -0.03, col = "grey80")
+    for (j in seq_along(SCEN)) {
+      x <- tm_all[tm_all$key == k & tm_all$scenario == SCEN[j], ]
+      if (!nrow(x)) next
+      y <- ifelse(is.finite(x$pp4), x$pp4, -0.06 + stats::runif(nrow(x), -0.02, 0.02))
+      points(j + stats::runif(nrow(x), -0.32, 0.32), y, pch = 16, cex = 0.35,
+             col = grDevices::adjustcolor(sc_col[j], alpha.f = 0.35))
+      ok <- is.finite(x$pp4)
+      if (sum(ok) >= 5) boxplot(x$pp4[ok], at = j, add = TRUE, axes = FALSE, outline = FALSE,
+                                boxwex = 0.55, col = NA, border = "grey20", lwd = 1.1, staplewex = 0.4)
+    }
+    ct <- th$cutoff[th$key == k]
+    if (is.finite(ct)) { abline(h = ct, lty = 2, lwd = 1.5); text(length(SCEN) + 0.45, ct, sprintf("cut-off %.3f", ct), adj = c(1, -0.4), cex = 0.75) }
+  }
+  par(mar = c(0, 0, 0, 0)); plot.new()
+  legend("center", horiz = TRUE, bty = "n", pch = c(16, 16, 16, NA), pt.cex = 1.6, cex = 1.05, seg.len = 3,
+         col = c("#1B7837", "#B2182B", "#E08214", "black"), lty = c(NA, NA, NA, 2), lwd = c(NA, NA, NA, 1.5),
+         legend = c("shared (should be above the line)", "not shared (should be below)", "extra negatives (not used to set the line)",
+                    "method's PP4 cut-off (5% FPR on calibration windows); 'none' = no result"))
+  dev.off()
   png(file.path(out, "roc_test.png"), width = 1100, height = 1000, res = 140)
   plot(NA, xlim = c(0, 1), ylim = c(0, 1), xlab = "False-positive rate", ylab = "Detection rate",
        main = "ROC on test windows (main setting)"); abline(0, 1, lty = 3, col = "grey60"); abline(v = FPR, lty = 2, col = "grey60")
@@ -349,7 +380,7 @@ evaluate_main <- function() {
   legend("bottomright", legend = label_of(MAIN_KEYS), col = cols, lwd = lwd_of(MAIN_KEYS),
          lty = ifelse(base_of(MAIN_KEYS) %in% BLOCK0, 1, 2), bty = "n", cex = 0.6)
   dev.off()
-  L <- c(L, "## Figures", "", "- Main figure: `matched_fpr_by_scenario.png`", "- `roc_test.png`", "",
+  L <- c(L, "## Figures", "", "- Main figure: `matched_fpr_by_scenario.png`", "- PP4 distribution by scenario and method: `pp4_distribution.png`", "- `roc_test.png`", "",
          "## Reproduce", "", "```",
          "Rscript scripts/bulk_gated_v1/run.R --stage main --cores 4 && Rscript scripts/bulk_gated_v1/evaluate.R --stage main",
          "```", "", "## Files changed (git diff --stat)", "", "(Codex pastes the output of `git diff --stat HEAD~1` here after committing)")
