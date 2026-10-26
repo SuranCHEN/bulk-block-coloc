@@ -15,13 +15,13 @@
 
 ## 4.2 第一段：主设置
 
-设定：GWAS q 0.3%（N 20,000）、eQTL q 1.5%（N 1,000）、因果间 |r| < 0.2；12 窗口 × 7 场景 × 100 次重复。
+设定：GWAS q 0.3%（N 20,000）、eQTL q 1.5%（N 1,000）、因果间 \|r\| < 0.2；12 窗口 × 7 场景 × 100 次重复。
 lead 阈值在校准窗口上选出：block-coloc（条件 lead 选择）为 1e-4，block-coloc（边际 lead 选择）和 block-coloc（交接包原版）为 1e-5。
 
 ### 三行结论
 
 1. **检出率**：误报率在校准窗口上匹配到 5%（测试窗口实际为 4.1%–4.8%，coloc.susie 为 2.8%）时，block-coloc（条件 lead 选择，本文方法）检出 93.3% 的共定位位点，高于整区域 coloc.abf 的 91.2%（同一批位点配对差 +2.2 个百分点，95% CI +1.1 至 +3.2）和 coloc.susie + coloc.abf fallback 的 90.1%（+3.2，+2.1 至 +4.4）。提升主要来自 double_shared2（94.2% 对 89.5%），single_shared 上没有损失（98.2% 对 97.8%）。但它没有超过 coloc.signals (cond)（95.1%），与 block-coloc（交接包原版，94.2%）也相近。
-2. **是否切块**：条件 lead 选择基本消除了单信号位点被误切块：在 single_shared、single_distinct 上走 block 的比例为 1.5% 和 0.3%；边际 lead 选择为 3.7% 和 4.3%；交接包原版在 single_shared 上为 84.8%。但多信号常被漏判：single_double_shared 只有 26.0% 走 block，double_shared2 为 78.8%，因为 eQTL 的第二个信号（N = 1,000，因果 |z| ≈ 3.9）经常过不了 lead 阈值。single_double_shared 中当 eQTL 特有的信号比共享信号更显著时，所有方法检出率都明显下降（整区域 coloc.abf 73.0%，block-coloc（条件 lead 选择）76.2%，coloc.susie + fallback 54.7%）。
+2. **是否切块**：条件 lead 选择基本消除了单信号位点被误切块：在 single_shared、single_distinct 上走 block 的比例为 1.5% 和 0.3%；边际 lead 选择为 3.7% 和 4.3%；交接包原版在 single_shared 上为 84.8%。但多信号常被漏判：single_double_shared 只有 26.0% 走 block，double_shared2 为 78.8%，因为 eQTL 的第二个信号（N = 1,000，因果 \|z\| ≈ 3.9）经常过不了 lead 阈值。single_double_shared 中当 eQTL 特有的信号比共享信号更显著时，所有方法检出率都明显下降（整区域 coloc.abf 73.0%，block-coloc（条件 lead 选择）76.2%，coloc.susie + fallback 54.7%）。
 3. **只有一个性状有信号时的误报**（额外阴性，未用于定判定线）：gwas_only 上，基于 coloc.abf 的方法误报 8.8%–11.8%，超过目标 5%；block-coloc（条件 lead 选择）为 11.8%，略高于整区域 coloc.abf 的 8.8%，原因是它的判定线更低（0.094 对 0.109），这些位点上两者给出的 PP4 在 600 个中有 599 个完全相同。coloc.signals 为 3.5%，coloc.susie 为 0.2%；null_both 上所有方法均为 0%。
 
 ### 汇总（测试窗口）
@@ -60,13 +60,13 @@ lead 阈值在校准窗口上选出：block-coloc（条件 lead 选择）为 1e-
 
 ## 4.3 第二段：一次只变一个因素
 
-从主设置出发，每次只改一个：GWAS q（0.1%、0.3%、1%、2%）、eQTL q（0.75%、1.5%、3%、5%）、不同因果变异之间的 LD 档位（|r| < 0.2、0.32–0.63、0.63–0.9）。每格 50 次重复，测试窗口每格每场景 300 个位点。
+从主设置出发，每次只改一个：GWAS q（0.1%、0.3%、1%、2%）、eQTL q（0.75%、1.5%、3%、5%）、不同因果变异之间的 LD 档位（\|r\| < 0.2、0.32–0.63、0.63–0.9）。每格 50 次重复，测试窗口每格每场景 300 个位点。
 
 ### 三行结论
 
 1. **GWAS 变强时，条件 lead 选择能把误报率稳住**：GWAS q 从 0.1% 增大到 2% 时，block-coloc（条件 lead 选择）的误报率保持在 3.5%–4.3%，而 block-coloc（边际 lead 选择）升到 9.5%、block-coloc（交接包原版）升到 15.7%；整区域 coloc.abf 保持在 4.3%。q = 2% 时它的检出率为 92.7%，高于整区域 coloc.abf（88.0%）和 coloc.susie + fallback（89.7%），低于 coloc.signals (cond)（95.0%）。
 2. **eQTL 弱时它最好，eQTL 强时被反超**：eQTL q = 0.75% 时，block-coloc（条件 lead 选择）检出率最高（82.4%；coloc.susie + fallback 80.3%，整区域 coloc.abf 79.2%，coloc.signals (cond) 78.4%）；eQTL q = 5% 时，coloc.signals (cond)（99.3%）和 coloc.susie + fallback（98.9%）超过它（97.3%），整区域 coloc.abf 反而降到 83.9%。
-3. **局限**：不同因果变异之间的 LD 升高时，所有方法都明显变差：检出率从约 90%（|r| < 0.2）降到约 50%（|r| 0.63–0.9）；高 LD 时 single_distinct 被 block-coloc（条件 lead 选择）判为共定位的比例达 84.3%（coloc.susie 为 31.0%）。只有 GWAS 有信号时（gwas_only），基于 coloc.abf 的方法误报 4%–17%，block-coloc（条件 lead 选择）为 6.3%–13.3%，coloc.signals 为 1.3%–4.7%，coloc.susie 为 0%；两性状都没有信号时，所有方法误报均为 0%。
+3. **局限**：不同因果变异之间的 LD 升高时，所有方法都明显变差：检出率从约 90%（\|r\| < 0.2）降到约 50%（\|r\| 0.63–0.9）；高 LD 时 single_distinct 被 block-coloc（条件 lead 选择）判为共定位的比例达 84.3%（coloc.susie 为 31.0%）。只有 GWAS 有信号时（gwas_only），基于 coloc.abf 的方法误报 4%–17%，block-coloc（条件 lead 选择）为 6.3%–13.3%，coloc.signals 为 1.3%–4.7%，coloc.susie 为 0%；两性状都没有信号时，所有方法误报均为 0%。
 
 ### GWAS 强度（eQTL q 1.5%，低 LD）：检出率 / 误报率
 
