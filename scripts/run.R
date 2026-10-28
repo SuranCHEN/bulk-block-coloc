@@ -17,6 +17,16 @@
 #     Rscript scripts/bulk_h2ref_v1/run.R --stage grid --cores 4
 # Options: --bank <dir> --ref <dir> --ld ref|insample --out <dir>
 #          --windows <comma list> --reps <n>
+#          --effect fixed|normal  --h2_gwas <x> --h2_eqtl <x>
+#   --effect normal (sensitivity analysis, user decision 2026-10-28): causal
+#     effects drawn from N(0, h2 / K) without rescaling (traceCB); same causal
+#     SNPs, signs and residuals as the fixed design. Default output folder
+#     outputs/bulk_h2ref_v1_normal. Use with --stage main: evaluate.R --stage
+#     main --out <that folder> then re-selects cut-offs and lead thresholds on
+#     the calibration windows of this design (matched 5% FPR within the run).
+#   --h2_gwas / --h2_eqtl (stage main only): change the single stage-1 cell,
+#     e.g. --effect normal --h2_eqtl 0.05 --reps 50; the default output folder
+#     then gets the suffix _g<h2_gwas>_e<h2_eqtl>.
 #   --ld ref (default): every method gets the 1000G EUR reference LD.
 #   --ld insample: each trait gets its own in-sample LD (comparison run; the
 #     default output folder is then outputs/bulk_h2ref_v1_insample).
@@ -65,7 +75,13 @@ ref_root <- .opt("ref", file.path(repo, "data", "ref_ld_1000g_eur_20261027"))
 LDMODE <- as.character(.opt("ld", "ref"))
 if (!LDMODE %in% c("ref", "insample")) stop("--ld must be ref or insample")
 if (!dir.exists(ref_root)) stop("reference LD folder not found: ", ref_root, " (run prepare_ref_ld.R first)")
-out <- .opt("out", file.path(repo, "outputs", if (LDMODE == "ref") "bulk_h2ref_v1" else "bulk_h2ref_v1_insample"))
+EFFECT <- as.character(.opt("effect", "fixed"))
+if (!EFFECT %in% c("fixed", "normal")) stop("--effect must be fixed or normal")
+H2G <- .opt("h2_gwas", NA); H2E <- .opt("h2_eqtl", NA)
+if ((!is.na(H2G) || !is.na(H2E)) && stage != "main") stop("--h2_gwas / --h2_eqtl are only for --stage main")
+out_name <- paste0("bulk_h2ref_v1", if (LDMODE == "insample") "_insample" else "", if (EFFECT == "normal") "_normal" else "",
+                   if (!is.na(H2G) || !is.na(H2E)) sprintf("_g%s_e%s", ifelse(is.na(H2G), "0.003", H2G), ifelse(is.na(H2E), "0.015", H2E)) else "")
+out <- .opt("out", file.path(repo, "outputs", out_name))
 dir.create(out, recursive = TRUE, showWarnings = FALSE)
 cores <- as.integer(.opt("cores", "4"))
 n_rep <- as.integer(.opt("reps", switch(stage, smoke = "2", main = "100", grid = "50")))
@@ -84,7 +100,9 @@ windows <- if (!identical(.w, "all")) as.numeric(strsplit(.w, ",")[[1]]) else
 
 CFG <- bulk_default_config()
 GATED <- gated_default_config()
-MAIN <- data.frame(h2_gwas = CFG$h2_gwas, h2_eqtl = CFG$h2_eqtl, tier = "low", stringsAsFactors = FALSE)
+CFG$effect <- EFFECT
+MAIN <- data.frame(h2_gwas = if (is.na(H2G)) CFG$h2_gwas else as.numeric(H2G),
+                   h2_eqtl = if (is.na(H2E)) CFG$h2_eqtl else as.numeric(H2E), tier = "low", stringsAsFactors = FALSE)
 GRID <- rbind(data.frame(h2_gwas = c(0.001, 0.01, 0.02), h2_eqtl = CFG$h2_eqtl, tier = "low"),
               data.frame(h2_gwas = CFG$h2_gwas, h2_eqtl = c(0.0075, 0.03, 0.05), tier = "low"),
               data.frame(h2_gwas = CFG$h2_gwas, h2_eqtl = CFG$h2_eqtl, tier = c("mid", "high")),
@@ -155,6 +173,8 @@ one_locus <- function(bank, cz, gw, eq, cell) {
     eqtl_shared_stronger = if (cz$scenario %in% c("A_AB", "AB_AC")) ze[1] > ze[2] else NA,
     gwas_shared_stronger = if (cz$scenario == "AB_AC") zg[1] > zg[2] else NA,
     var_y_gwas = gw$var_y, var_y_eqtl = eq$var_y, var_g_gwas = gw$var_g, var_g_eqtl = eq$var_g,
+    effect_mag_gwas = paste(round(if (is.null(cz$mag_gwas)) rep(1, length(cz$gwas)) else cz$mag_gwas, 3), collapse = ";"),
+    effect_mag_eqtl = paste(round(if (is.null(cz$mag_eqtl)) rep(1, length(cz$eqtl)) else cz$mag_eqtl, 3), collapse = ";"),
     n_cs_gwas = if (inherits(f1, "error")) NA else length(f1$sets$cs),
     n_cs_eqtl = if (inherits(f2, "error")) NA else length(f2$sets$cs))
   res <- cbind(cell, res, row.names = NULL)
@@ -174,6 +194,9 @@ run_unit <- function(bank, center, scenario, rep) {
     if (is.null(czs[[tr]])) czs[[tr]] <- tryCatch(bulk_sample_causal(bank, scenario, tr, .bulk_seed(center, scenario, rep, "causal", tr), CFG),
                                                   error = function(e) e)
     cz <- czs[[tr]]
+    if (EFFECT == "normal" && !inherits(cz, "error") && is.null(cz$mag_gwas)) {
+      cz <- c(cz, bulk_effect_magnitudes(center, scenario, rep, tr, cz)); czs[[tr]] <- cz
+    }
     if (inherits(cz, "error")) { skipped <- unique(c(skipped, sprintf("%s %s %d tier %s skipped: %s", center, scenario, rep, tr, conditionMessage(cz)))); next }
     kg <- paste(tr, cell$h2_gwas); ke <- paste(tr, cell$h2_eqtl)
     if (is.null(gws[[kg]])) gws[[kg]] <- bulk_gwas(bank, cz, cell$h2_gwas, dr)
@@ -192,7 +215,7 @@ run_unit <- function(bank, center, scenario, rep) {
   }
   set <- if (center %in% CALIBRATION) "calibration" else "test"
   id <- data.frame(window = center, set = set, scenario = scenario, truth = sc$truth, rep = rep,
-                   n_causal_gwas = sc$n_causal_gwas, n_causal_eqtl = sc$n_causal_eqtl, ld_panel = LDMODE)
+                   n_causal_gwas = sc$n_causal_gwas, n_causal_eqtl = sc$n_causal_eqtl, ld_panel = LDMODE, effect = EFFECT)
   if (!length(rows)) stop(paste(skipped, collapse = "; "))
   list(scores = cbind(id, do.call(rbind, rows), row.names = NULL),
        loci = cbind(id, do.call(rbind, loci), row.names = NULL), skipped = skipped)
@@ -232,6 +255,6 @@ loci <- do.call(rbind, lapply(all, `[[`, "loci"))
 write.table(scores, gzfile(file.path(out, paste0("scores_", stage, ".tsv.gz"))), sep = "\t", quote = FALSE, row.names = FALSE)
 write.table(loci, gzfile(file.path(out, paste0("loci_", stage, ".tsv.gz"))), sep = "\t", quote = FALSE, row.names = FALSE)
 writeLines(capture.output(sessionInfo()), file.path(out, paste0("sessionInfo_", stage, ".txt")))
-message(sprintf("LD given to the methods: %s; output %s", LDMODE, out))
+message(sprintf("LD given to the methods: %s; effects: %s; output %s", LDMODE, EFFECT, out))
 message(sprintf("done: %d score rows from %d units; total %.1f min", nrow(scores), length(files),
                 as.numeric(Sys.time() - t_start, units = "mins")))

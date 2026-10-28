@@ -19,7 +19,12 @@
 #   Lead threshold for V0-V4: chosen on calibration windows among 1e-3, 1e-4,
 #     1e-5 (same for both traits) as the one with the highest calibration
 #     detection rate at matched 5% FPR (ties -> 1e-3). The "_fb" version of a
-#     method uses the same lead threshold as the method itself. The earlier
+#     method uses the same lead threshold as the method itself, except for the
+#     adopted rule (V3_gate_conditional_fb, user decision 2026-10-28): it is
+#     chosen by its own calibration detection rate, and the no-fallback
+#     sensitivity version V3_gate_conditional then uses the same threshold.
+#     --reselect re-applies this rule to an existing thresholds.tsv (cut-offs
+#     are never recomputed; only the `selected` column can change). The earlier
 #     bulk setting (GWAS 5e-8, eQTL 1e-5) is reported as a sensitivity only.
 #   All reported performance comes from TEST windows with the frozen cut-offs.
 #   Intervals: Wilson 95% CI for rates; paired differences use McNemar's exact
@@ -45,6 +50,7 @@ stage <- .opt("stage", "main")
 out <- .opt("out", file.path(repo, "outputs", "bulk_h2ref_v1"))
 FPR <- as.numeric(.opt("fpr", "0.05"))
 B <- as.integer(.opt("boot", "1000"))
+RESELECT <- "--reselect" %in% .args
 set.seed(20261025)
 
 BLOCK0 <- c("V0_handoff", "V1_block_any", "V2_gate_marginal", "V3_gate_conditional", "V4_cond_block")
@@ -121,6 +127,26 @@ key_of <- function(d) ifelse(d$method %in% BLOCK,
 # (in the output folder) and inserted here, so re-running this script keeps it.
 conclusions <- function(st) { f <- file.path(out, paste0("conclusions_", st, ".md"))
   if (file.exists(f)) readLines(f, warn = FALSE) else "(to be written by Claude after reviewing the tables; Codex leaves this section empty)" }
+# Reproduce line for the main stage, from the settings recorded in the scores.
+reproduce_main <- function(d) {
+  extra <- c(if (identical(eff_kind(d), "normal")) "--effect normal",
+             if (d$h2_gwas[1] != 0.003) sprintf("--h2_gwas %g", d$h2_gwas[1]),
+             if (d$h2_eqtl[1] != 0.015) sprintf("--h2_eqtl %g", d$h2_eqtl[1]),
+             if (max(d$rep) != 100) sprintf("--reps %d", max(d$rep)),
+             if ("ld_panel" %in% names(d) && identical(unique(d$ld_panel), "insample")) "--ld insample")
+  o <- if (identical(normalizePath(out, mustWork = FALSE), normalizePath(file.path(repo, "outputs", "bulk_h2ref_v1"), mustWork = FALSE))) "" else
+    paste0(" --out ", sub(paste0("^", normalizePath(repo), "/"), "", normalizePath(out)))
+  sprintf("Rscript scripts/bulk_h2ref_v1/run.R --stage main %s--cores 4 && Rscript scripts/bulk_h2ref_v1/evaluate.R --stage main%s",
+          if (length(extra)) paste0(paste(extra, collapse = " "), " ") else "", o)
+}
+
+# Effect-size model of the run (column `effect` exists from 2026-10-28; older runs are "fixed").
+eff_kind <- function(d) { v <- if ("effect" %in% names(d)) unique(d$effect) else "fixed"; if (identical(v, "normal")) "normal" else "fixed" }
+eff_text <- function(d) { v <- if ("effect" %in% names(d)) unique(d$effect) else "fixed"
+  if (identical(v, "normal")) "the effect of each causal SNP is drawn from N(0, h2 / K), independently for the two traits, without rescaling (Var(g) = h2 in expectation only; sensitivity analysis)" else
+    "each trait's h2 split equally over its causal SNPs (per-SNP h2 = h2 / K)" }
+h2_text <- function(d) sprintf("GWAS N 20,000, local h2 %s; eQTL N 1,000, local h2 %s",
+  paste(sprintf("%g%%", 100 * sort(unique(d$h2_gwas))), collapse = ", "), paste(sprintf("%g%%", 100 * sort(unique(d$h2_eqtl))), collapse = ", "))
 ld_text <- function(d) { v <- if ("ld_panel" %in% names(d)) unique(d$ld_panel) else "unknown"
   paste(ifelse(v == "ref", "1000 Genomes EUR reference LD (489 people) for both traits",
         ifelse(v == "insample", "each trait's in-sample LD", v)), collapse = "; ") }
@@ -202,6 +228,22 @@ evaluate_smoke <- function() {
 
 # ------------------------------------------------------------- main ----
 
+# Lead threshold choice for V0-V4 (symmetric thresholds only). The method that
+# decides is the plain version, except for V3, where the adopted rule
+# V3_gate_conditional_fb decides (user decision 2026-10-28); the other version
+# of the pair then uses the same threshold.
+select_leads <- function(th) {
+  th$selected <- !th$method %in% BLOCK
+  for (m in BLOCK0) {
+    decider <- if (m == "V3_gate_conditional") paste0(m, "_fb") else m
+    x <- th[th$method == decider & !th$legacy, ]; best <- max(x$calib_tpr)
+    pick <- x[x$calib_tpr == best, ]
+    pick <- if (any(pick$lead_threshold1 == 1e-3)) pick[pick$lead_threshold1 == 1e-3, ][1, ] else pick[1, ]
+    th$selected[th$method %in% c(m, paste0(m, "_fb")) & th$lead_threshold1 == pick$lead_threshold1 & !th$legacy] <- TRUE
+  }
+  th
+}
+
 evaluate_main <- function() {
   d <- load_scores("main")
   loci <- rd("loci_main.tsv.gz")
@@ -210,6 +252,13 @@ evaluate_main <- function() {
   # Re-report with the frozen cut-offs; calibrate only an initial run with no table.
   if (file.exists(file.path(out, "thresholds.tsv"))) {
     th <- utils::read.delim(file.path(out, "thresholds.tsv"), stringsAsFactors = FALSE)
+    if (RESELECT) {
+      old <- th$selected; th <- select_leads(th)
+      if (!identical(old, th$selected)) {
+        write.table(th, file.path(out, "thresholds.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
+        message("--reselect: lead-threshold selection changed for ", paste(unique(th$method[old != th$selected]), collapse = ", "))
+      } else message("--reselect: selection unchanged; thresholds.tsv not rewritten")
+    }
   } else {
     keys <- unique(d$key)
     th <- do.call(rbind, lapply(keys, function(k) {
@@ -220,14 +269,7 @@ evaluate_main <- function() {
                  calib_n_neg = sum(x$truth == 0), calib_n_pos = sum(x$truth == 1))
     }))
     th$legacy <- th$method %in% BLOCK & th$lead_threshold1 != th$lead_threshold2
-    # lead threshold choice for V0-V4 (symmetric thresholds only); _fb follows its method
-    th$selected <- !th$method %in% BLOCK
-    for (m in BLOCK0) {
-      x <- th[th$method == m & !th$legacy, ]; best <- max(x$calib_tpr)
-      pick <- x[x$calib_tpr == best, ]
-      pick <- if (any(pick$lead_threshold1 == 1e-3)) pick[pick$lead_threshold1 == 1e-3, ][1, ] else pick[1, ]
-      th$selected[th$method %in% c(m, paste0(m, "_fb")) & th$lead_threshold1 == pick$lead_threshold1 & !th$legacy] <- TRUE
-    }
+    th <- select_leads(th)
     write.table(th, file.path(out, "thresholds.tsv"), sep = "\t", quote = FALSE, row.names = FALSE)
   }
   sel <- th$key[th$selected]
@@ -240,8 +282,8 @@ evaluate_main <- function() {
   ts <- ts_all[ts_all$scenario %in% SCEN_CORE, ]; tm <- tm_all[tm_all$scenario %in% SCEN_CORE, ]
 
   L <- c("# Bulk block-coloc: main comparison (stage 1)", "",
-         sprintf("Generated %s. Setting: GWAS N 20,000, local h2 0.3%%; eQTL N 1,000, local h2 1.5%%; each trait's h2 split equally over its causal SNPs (per-SNP h2 = h2 / K); causal |r| < 0.2.",
-                 format(Sys.time(), "%Y-%m-%d %H:%M")),
+         sprintf("Generated %s. Setting: %s; %s; causal |r| < 0.2.",
+                 format(Sys.time(), "%Y-%m-%d %H:%M"), h2_text(d), eff_text(d)),
          sprintf("LD given to the methods: %s.", ld_text(d)),
          sprintf("Calibration windows: %s. Test windows: %s.", paste(sort(unique(cal$window)), collapse = ", "), paste(sort(unique(tst$window)), collapse = ", ")),
          sprintf("Loci: %d calibration, %d test (per method). Target FPR %.0f%% on calibration windows (negatives: single_distinct and double_distinct).",
@@ -350,9 +392,12 @@ evaluate_main <- function() {
     data.frame(scenario = SCEN_LABEL[s], n = nrow(x), causal_z_gwas = fmt(med(x$causal_abs_z_gwas), 1),
                causal_z_eqtl = fmt(med(x$causal_abs_z_eqtl), 1), pair_abs_r_median = fmt(med(x$pair_abs_r), 2),
                gwas_no_cs = pct(mean(x$n_cs_gwas == 0, na.rm = TRUE)), eqtl_no_cs = pct(mean(x$n_cs_eqtl == 0, na.rm = TRUE))) }))
+  h1 <- d$h2_gwas[1]; h2 <- d$h2_eqtl[1]
+  ez <- function(n, h, K) { q <- h / K; if (identical(eff_kind(d), "normal")) sqrt(2 / pi * (1 + n * q / (1 - q))) else sqrt(n * q / (1 - q)) }
   L <- c(L, "## 9. Inputs (test windows)", "",
-         sprintf("Expected causal |z| about sqrt(N h2 / K): GWAS %.1f (K = 1) / %.1f (K = 2); eQTL %.1f (K = 1) / %.1f (K = 2).",
-                 sqrt(20000 * 0.003), sqrt(20000 * 0.003 / 2), sqrt(1000 * 0.015), sqrt(1000 * 0.015 / 2)), "", md_table(inp))
+         sprintf("Expected causal |z| (%s): GWAS %.1f (K = 1) / %.1f (K = 2); eQTL %.1f (K = 1) / %.1f (K = 2). Table: medians over loci and causal SNPs.",
+                 if (identical(eff_kind(d), "normal")) "normal effects: E|z| = sqrt(2 / pi * (1 + N q / (1 - q))), q = h2 / K" else "sqrt(N q / (1 - q)), q = h2 / K",
+                 ez(20000, h1, 1), ez(20000, h1, 2), ez(1000, h2, 1), ez(1000, h2, 2)), "", md_table(inp))
 
   # figures
   cols <- col_of(MAIN_KEYS)
@@ -410,7 +455,7 @@ evaluate_main <- function() {
   dev.off()
   L <- c(L, "## Figures", "", "- Main figure: `matched_fpr_by_scenario.png`", "- PP4 distribution by scenario and method: `pp4_distribution.png`", "- `roc_test.png`", "",
          "## Reproduce", "", "```",
-         "Rscript scripts/bulk_h2ref_v1/run.R --stage main --cores 4 && Rscript scripts/bulk_h2ref_v1/evaluate.R --stage main",
+         reproduce_main(d),
          "```", "", "## Files changed (git diff --stat)", "", "(Codex pastes the output of `git diff --stat HEAD~1` here after committing)")
   writeLines(L, file.path(out, "RESULTS.md"))
   message("wrote ", file.path(out, "RESULTS.md"))
@@ -462,7 +507,7 @@ evaluate_grid <- function() {
   L <- c("# Bulk block-coloc: stage 2, one factor at a time (test windows, frozen cut-offs)", "",
          sprintf("Generated %s. Replicates per cell: %d. Cut-offs and lead thresholds from stage 1 (thresholds.tsv), not re-tuned.",
                  format(Sys.time(), "%Y-%m-%d %H:%M"), max(d$rep)),
-         sprintf("Strength = local h2 of each trait, split equally over its causal SNPs. LD given to the methods: %s.", ld_text(d)), "",
+         sprintf("Strength = local h2 of each trait; %s. LD given to the methods: %s.", eff_text(d), ld_text(d)), "",
          "## Three-line conclusion", "", conclusions("grid"), "",
          "## Detection rate vs GWAS h2 (eQTL h2 1.5%, low LD)", "", md_table(wide(qg, "h2_gwas", "TPR")),
          "## False-positive rate vs GWAS h2", "", md_table(wide(qg, "h2_gwas", "FPR")),

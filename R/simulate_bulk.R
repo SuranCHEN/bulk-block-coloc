@@ -16,6 +16,15 @@
 #      LD, as in a real summary-statistics analysis. The SNP set of every window
 #      is restricted to SNPs present in the reference, for both LD choices, so a
 #      comparison of the two LD choices differs only in the LD matrix.
+#   4. (2026-10-28, sensitivity analysis requested by the user) effect = "normal":
+#      the effect of each causal SNP is drawn from N(0, h2 / K), independently
+#      for the two traits, as in traceCB (Jiang et al. 2026). The genetic value
+#      is NOT rescaled, so Var(g) equals h2 only in expectation, and
+#      e ~ N(0, 1 - h2). The draw is b_j = s_j * |u_j| * sqrt(h2 / K) with the
+#      same causal SNPs, signs s_j and residuals as the "fixed" design and
+#      u_j ~ N(0, 1) from a separate seed, so the two designs are paired.
+#      effect = "fixed" (default) is unchanged: the results of stages 1 and 2
+#      are reproduced exactly.
 #
 # ---------------------------------------------------------------------------
 # Data (read-only, never copied): data/sc-1mb-pattern-20260909-v1/<window>/
@@ -34,6 +43,7 @@
 #   b_j = s_j * sqrt(h2 / K) for the K causal SNPs of that trait, s_j = +1/-1,
 #   g = sum_j b_j x_j is then rescaled so that Var(g) = h2 in the sample,
 #   e_k ~ N(0, 1 - h2), so Var(y) is about 1.
+#   (effect = "normal": b_j = s_j |u_j| sqrt(h2 / K), u_j ~ N(0, 1), no rescaling.)
 #   Expected causal |z| is about sqrt(N h2 / K) when the causal SNPs are in
 #   low LD. Summary statistics: per-allele OLS of y on each SNP's dosage.
 #
@@ -74,7 +84,8 @@ bulk_default_config <- function() {
     maf_min = 0.05,           # causal SNPs: in-sample MAF >= 0.05 in both samples
     r_other_max = 0.2,        # |r| for causal pairs outside the tier pair(s)
     ld_tiers = list(low = c(0, 0.2), mid = c(0.32, 0.63), high = c(0.63, 0.9)),
-    max_draw_attempts = 500L
+    max_draw_attempts = 500L,
+    effect = "fixed"          # "fixed" (main design) or "normal" (sensitivity analysis, see header)
   )
 }
 
@@ -250,21 +261,38 @@ bulk_draws <- function(bank, center, scenario, rep) {
   list(eps_gwas = e1, eps_eqtl = e2)
 }
 
+#' Effect magnitudes for effect = "normal": |u_j|, u_j ~ N(0, 1), one per
+#' causal SNP of each trait, drawn independently for the two traits (a shared
+#' SNP gets two independent magnitudes). Seeded by (window, scenario, rep,
+#' tier) only, so they do not change with h2 (common random numbers).
+bulk_effect_magnitudes <- function(center, scenario, rep, tier, causal) {
+  set.seed(.bulk_seed(center, scenario, rep, "effect", tier))
+  list(mag_gwas = abs(stats::rnorm(length(causal$gwas))), mag_eqtl = abs(stats::rnorm(length(causal$eqtl))))
+}
+
 # ------------------------------------------------------ linear trait ----
 
 # One linear trait on one sample with local heritability h2 split equally over
 # its K causal SNPs. Returns OLS summary statistics for every SNP.
-.bulk_trait <- function(S, causal, signs, h2, eps) {
+# mags = NULL: fixed effects sqrt(h2 / K), Var(g) rescaled to h2 exactly.
+# mags given (effect = "normal"): effects signs * mags * sqrt(h2 / K), no
+# rescaling, residual variance 1 - h2 (traceCB).
+.bulk_trait <- function(S, causal, signs, h2, eps, mags = NULL) {
   n <- S$n; K <- length(causal)
   if (h2 < 0 || h2 >= 0.95) stop("h2 must be in [0, 0.95)")
+  if (!is.null(mags) && length(mags) != K) stop("mags must have one value per causal SNP")
   g <- numeric(n)
   if (K && h2 > 0) {
     X <- sweep(S$Gc[, causal, drop = FALSE], 2, S$sd[causal], "/")
-    g <- drop(X %*% (signs * sqrt(h2 / K)))
-    vg <- stats::var(g)
-    if (vg > 1e-12) g <- g * sqrt(h2 / vg)     # Var(g) = h2 exactly in this sample
+    if (is.null(mags)) {
+      g <- drop(X %*% (signs * sqrt(h2 / K)))
+      vg <- stats::var(g)
+      if (vg > 1e-12) g <- g * sqrt(h2 / vg)     # Var(g) = h2 exactly in this sample
+    } else {
+      g <- drop(X %*% (signs * mags * sqrt(h2 / K)))   # Var(g) = h2 in expectation only
+    }
   }
-  ve <- 1 - stats::var(g)
+  ve <- if (is.null(mags)) 1 - stats::var(g) else 1 - h2
   y <- g + sqrt(ve) * eps
   y <- y - mean(y)
   Xty <- drop(crossprod(S$Gc, y))
@@ -278,11 +306,13 @@ bulk_draws <- function(bank, center, scenario, rep) {
        var_y = stats::var(y), var_g = stats::var(g))
 }
 
+# causal$mag_gwas / causal$mag_eqtl are set only for effect = "normal"
+# (bulk_effect_magnitudes); otherwise they are NULL and the fixed design is used.
 bulk_gwas <- function(bank, causal, h2, draws)
-  .bulk_trait(bank$gwas, causal$gwas, causal$sign_gwas, h2, draws$eps_gwas)
+  .bulk_trait(bank$gwas, causal$gwas, causal$sign_gwas, h2, draws$eps_gwas, causal$mag_gwas)
 
 bulk_eqtl <- function(bank, causal, h2, draws)
-  .bulk_trait(bank$qtl, causal$eqtl, causal$sign_eqtl, h2, draws$eps_eqtl)
+  .bulk_trait(bank$qtl, causal$eqtl, causal$sign_eqtl, h2, draws$eps_eqtl, causal$mag_eqtl)
 
 # ----------------------------------------------------------- assemble ----
 

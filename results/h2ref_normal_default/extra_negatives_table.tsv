@@ -1,0 +1,10 @@
+method	gwas_only	null_both
+block-coloc (conditional lead selection, proposed)	6.8% [5.1%, 9.1%]	0.0% [0.0%, 0.6%]
+block-coloc (no fallback)	7.3% [5.5%, 9.7%]	0.0% [0.0%, 0.6%]
+block-coloc (marginal lead selection)	6.8% [5.1%, 9.1%]	0.0% [0.0%, 0.6%]
+block-coloc (original handoff)	7.3% [5.5%, 9.7%]	0.0% [0.0%, 0.6%]
+coloc.abf, whole region	7.0% [5.2%, 9.3%]	0.0% [0.0%, 0.6%]
+coloc.susie	0.2% [0.0%, 0.9%]	0.0% [0.0%, 0.6%]
+coloc.susie + coloc.abf fallback	7.2% [5.4%, 9.5%]	0.0% [0.0%, 0.6%]
+coloc.signals (mask)	4.0% [2.7%, 5.9%]	0.0% [0.0%, 0.6%]
+coloc.signals (cond)	3.7% [2.4%, 5.5%]	0.0% [0.0%, 0.6%]

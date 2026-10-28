@@ -28,6 +28,10 @@
 #   7. Locus assembly: ld = "ref" gives both traits the reference LD,
 #      ld = "insample" gives each trait its own in-sample LD.
 #   8. Common random numbers.
+#   9. effect = "normal" (sensitivity analysis): E[Var(g)] about h2 and Var(g)
+#      variable across replicates (coefficient of variation about sqrt(2) for
+#      K = 1); same causal SNPs, signs and residuals as the fixed design;
+#      magnitudes reproducible from the seed; the fixed design is unchanged.
 
 .args <- commandArgs(trailingOnly = TRUE)
 script_file <- sub("^--file=", "", grep("^--file=", commandArgs(FALSE), value = TRUE)[1])
@@ -239,6 +243,29 @@ c4 <- bulk_sample_causal(bank, "AB_CD", "low", .bulk_seed(1, "AB_CD", 4, "causal
 d1 <- bulk_draws(bank, 1, "AB_CD", 3); d2 <- bulk_draws(bank, 1, "AB_CD", 3); d3 <- bulk_draws(bank, 1, "AB_CD", 4)
 check("8 same seed -> same causal SNPs and residuals", identical(a, b) && identical(d1, d2))
 check("8 different rep -> different draws", !identical(d1$eps_gwas, d3$eps_gwas) && !identical(c(a$gwas, a$eqtl), c(c4$gwas, c4$eqtl)))
+
+# 9. effect = "normal"
+nv <- t(vapply(1:2000, function(r) {
+  c1 <- bulk_sample_causal(bank, "A_A", "low", .bulk_seed("n1", r), cfg)
+  c2 <- bulk_sample_causal(bank, "AB_AB", "low", .bulk_seed("n2", r), cfg)
+  c1 <- c(c1, bulk_effect_magnitudes(1, "A_A", r, "low", c1)); c2 <- c(c2, bulk_effect_magnitudes(1, "AB_AB", r, "low", c2))
+  d <- bulk_draws(bank, 1, "A_A", r)
+  c(bulk_eqtl(bank, c1, 0.015, d)$var_g, bulk_eqtl(bank, c2, 0.015, d)$var_g, bulk_gwas(bank, c2, 0.003, d)$var_g)
+}, numeric(3)))
+mv <- colMeans(nv) / c(0.015, 0.015, 0.003); cv1 <- stats::sd(nv[, 1]) / mean(nv[, 1])
+check("9 normal effects: mean Var(g) / h2 about 1 (eQTL K=1, eQTL K=2, GWAS K=2)", all(abs(mv - 1) < 0.1),
+      sprintf("%s", paste(round(mv, 3), collapse = "/")))
+check("9 normal effects: Var(g) varies, CV about sqrt(2) for K = 1", abs(cv1 - sqrt(2)) < 0.15, sprintf("CV %.2f", cv1))
+cz9 <- bulk_sample_causal(bank, "AB_AB", "low", .bulk_seed("n9", 1), cfg)
+m1 <- bulk_effect_magnitudes(1, "AB_AB", 1, "low", cz9); m2 <- bulk_effect_magnitudes(1, "AB_AB", 1, "low", cz9)
+m3 <- bulk_effect_magnitudes(1, "AB_AB", 2, "low", cz9)
+check("9 normal effects: magnitudes reproducible, differ across reps", identical(m1, m2) && !identical(m1, m3))
+d9 <- bulk_draws(bank, 1, "AB_AB", 1)
+f9 <- bulk_eqtl(bank, cz9, 0.015, d9); n9 <- bulk_eqtl(bank, c(cz9, m1), 0.015, d9)
+f9b <- .bulk_trait(bank$qtl, cz9$eqtl, cz9$sign_eqtl, 0.015, d9$eps_eqtl)
+check("9 fixed design unchanged; normal design differs only through effect sizes",
+      identical(f9, f9b) && !identical(f9$z, n9$z) && abs(n9$var_y - (n9$var_g + 1 - 0.015)) < 0.1,
+      sprintf("Var(y) %.3f", n9$var_y))
 
 res <- do.call(rbind, results)
 cat("\n"); print(res, row.names = FALSE)

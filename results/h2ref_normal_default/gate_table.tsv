@@ -1,0 +1,33 @@
+method	scenario	true_signals	should_go	n	branch_block	correct_branch	leads_match_truth	median_leads
+block-coloc (conditional lead selection, proposed)	single_shared	1+1	whole	600	8.2%	91.8%	33.3%	1+1
+block-coloc (conditional lead selection, proposed)	single_double_shared	1+2	block	600	11.7%	11.7%	8.0%	1+1
+block-coloc (conditional lead selection, proposed)	double_shared2	2+2	block	600	26.0%	26.0%	3.2%	1+1
+block-coloc (conditional lead selection, proposed)	double_shared1	2+2	block	600	29.2%	29.2%	4.5%	1+1
+block-coloc (conditional lead selection, proposed)	single_distinct	1+1	whole	600	8.8%	91.2%	31.2%	1+1
+block-coloc (conditional lead selection, proposed)	double_distinct	2+2	block	600	26.0%	26.0%	3.5%	1+1
+block-coloc (conditional lead selection, proposed)	gwas_only	1+0	whole	600	2.0%	98.0%	57.2%	1+0
+block-coloc (conditional lead selection, proposed)	null_both	0+0	whole	600	0.3%	99.7%	74.5%	0+0
+block-coloc (no fallback)	single_shared	1+1	whole	600	8.2%	91.8%	33.3%	1+1
+block-coloc (no fallback)	single_double_shared	1+2	block	600	11.7%	11.7%	8.0%	1+1
+block-coloc (no fallback)	double_shared2	2+2	block	600	26.0%	26.0%	3.2%	1+1
+block-coloc (no fallback)	double_shared1	2+2	block	600	29.2%	29.2%	4.5%	1+1
+block-coloc (no fallback)	single_distinct	1+1	whole	600	8.8%	91.2%	31.2%	1+1
+block-coloc (no fallback)	double_distinct	2+2	block	600	26.0%	26.0%	3.5%	1+1
+block-coloc (no fallback)	gwas_only	1+0	whole	600	2.0%	98.0%	57.2%	1+0
+block-coloc (no fallback)	null_both	0+0	whole	600	0.3%	99.7%	74.5%	0+0
+block-coloc (marginal lead selection)	single_shared	1+1	whole	600	10.8%	89.2%	14.5%	1+0
+block-coloc (marginal lead selection)	single_double_shared	1+2	block	600	10.8%	10.8%	2.3%	1+0
+block-coloc (marginal lead selection)	double_shared2	2+2	block	600	16.3%	16.3%	1.2%	1+0
+block-coloc (marginal lead selection)	double_shared1	2+2	block	600	19.3%	19.3%	1.8%	1+0
+block-coloc (marginal lead selection)	single_distinct	1+1	whole	600	12.2%	87.8%	12.5%	1+0
+block-coloc (marginal lead selection)	double_distinct	2+2	block	600	16.5%	16.5%	1.3%	1+0
+block-coloc (marginal lead selection)	gwas_only	1+0	whole	600	0.7%	99.3%	36.8%	1+0
+block-coloc (marginal lead selection)	null_both	0+0	whole	600	0.0%	100.0%	96.3%	0+0
+block-coloc (original handoff)	single_shared	1+1	whole	600	50.5%	49.5%	40.8%	1+1
+block-coloc (original handoff)	single_double_shared	1+2	block	600	37.7%	37.7%	15.0%	1+1
+block-coloc (original handoff)	double_shared2	2+2	block	600	46.7%	46.7%	7.5%	1+1
+block-coloc (original handoff)	double_shared1	2+2	block	600	39.0%	39.0%	8.8%	2+1
+block-coloc (original handoff)	single_distinct	1+1	whole	600	19.3%	80.7%	34.7%	1+1
+block-coloc (original handoff)	double_distinct	2+2	block	600	21.5%	21.5%	8.5%	1+1
+block-coloc (original handoff)	gwas_only	1+0	whole	600	28.5%	71.5%	0.0%	1+2
+block-coloc (original handoff)	null_both	0+0	whole	600	33.0%	67.0%	0.0%	2+2

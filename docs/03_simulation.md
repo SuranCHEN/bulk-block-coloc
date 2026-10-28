@@ -118,6 +118,8 @@ single_distinct、single_shared、single_double_shared、double_shared2 分别�
 
 第二段沿用第一段的判定线，因此条件改变时误报率会偏离 5%，用来看判定线在条件变化下是否稳健。
 
+**敏感性分析（正态效应）.** 效应改为 $$\beta \sim \mathcal{N}(0, h^2_k/K_k)$$（两性状独立，不缩放），因果变异、符号与残差与主设计相同；默认格 100 次重复、$$h^2_2 = 5\%$$ 格 50 次重复，判定线和 lead 阈值在本设计的校准窗口上重新选。结果见 [Results](04_results.md) §7。
+
 ## 8. Reproduction
 
 ```bash
