@@ -1,51 +1,39 @@
-# block coloc（bulk）
+# block-coloc (bulk)
 
-在 GWAS × bulk eQTL 共定位中，一个区域里可能有多个独立信号，这时经典 coloc.abf 的“每个性状至多一个因果变异”假设不成立。
-本项目评估 **block-coloc**：只在确有多个独立信号时，用 LD 把区域切块、每块跑 coloc.abf；其余情况直接跑整区域 coloc.abf。
-我们在真实 UKBB chr22 基因型上做模拟，与整区域 coloc.abf、coloc.susie、coloc.signals 比较，看在相同误报率下，block-coloc 在哪些条件下检出率更高或更低、定位更准或更差。
+**Goal.** 评估 block-coloc 在“一个区域内有多个因果变异”时的共定位表现。block-coloc 只在条件分析发现多个独立信号时，按 LD 把区域切块并在块内做 coloc.abf；否则做整区域 coloc.abf。我们在真实 UK Biobank chr22 基因型上模拟两个连续性状（大样本 GWAS，$$N = 20{,}000$$；小样本 bulk eQTL，$$N = 1{,}000$$），所有方法使用 1000 Genomes EUR 参考 LD，在相同误报率下与整区域 coloc.abf、coloc.susie、coloc.signals 比较。
 
-## 主要结论
+## Documentation
 
-![测试窗口上各方法在每个场景中被判为共定位的比例（误报率匹配到 5%）](matched_fpr_by_scenario.png)
+- [Model](01_bulk_model.md)：个体水平线性模型，summary statistics 的分布 $$\mathbf{z} \sim \mathcal{N}(\sqrt{N}\mathbf{R}\boldsymbol\beta, \mathbf{R})$$，coloc.abf 的假设与后验，多因果变异下的现有方法，条件 $$z$$，参考 LD
+- [Method](02_block_coloc_pseudocode.md)：block-coloc 算法，比较的版本，与 coloc.signals / PWCoCo 的关系，对照方法
+- [Simulation](03_simulation.md)：与已有模拟研究的对照，数据生成过程，参数，场景，评价方式
+- [Supplementary Note](09_parameters.md)：模拟参数的推导。假设 A1–A5；Proposition 1–9：因果变异的信号强度、效应分布、因果间 LD、有无信号时的 lead、ABF 收缩、coloc 先验质量、参考 LD 误差、评价精度
 
-**第一段（主设置）**：误报率都控制在 5% 时，block-coloc（条件 lead 选择）检出 93.3% 的共定位位点，高于整区域 coloc.abf（91.2%）和 coloc.susie + fallback（90.1%），低于 coloc.signals (cond)（95.1%）。它几乎不会把单信号位点错误地切块（single_shared 1.5%，交接包原版 84.8%），但 eQTL 信号弱时常漏掉第二个信号。
+## Results
 
-![第二段：检出率与误报率随 GWAS 强度、eQTL 强度和因果间 LD 的变化](grid_lines.png)
+- [Stage 1: main setting](04_results.md)：功效、误报率、机制分析、敏感性分析、理论与观察的对照
+- [Stage 2: one factor at a time](04_results.md#6-stage-2-one-factor-at-a-time)：$$h^2_1$$、$$h^2_2$$、因果间 LD 的单因素变化
+- [Previous results](07_results_v1.md)：上一版设定（每个因果变异固定解释比例、样本内 LD）
+- [Early bulk results](05_early_bulk_results.md)：10 月中按 8 月旧设定重建的结果
 
-**第二段（一次只变一个因素，黑色粗线是本文方法）**：
+## Notes and code
 
-1. **GWAS 变强时误报率稳定**：GWAS q 增大到 2% 时，条件 lead 选择的误报率保持在约 4%，而边际 lead 选择升到 9.5%、交接包原版升到 15.7%。
-2. **eQTL 弱时最好，eQTL 强时被反超**：eQTL q = 0.75% 时检出率最高（82.4%）；eQTL q = 5% 时 coloc.signals (cond) 和 coloc.susie + fallback 更高（约 99% 对 97.3%）。
-3. **局限**：不同因果变异高度连锁时所有方法都难以区分（检出率降到约 50%，多数方法误报率升到约 40%，coloc.susie 约 16%）；只有 GWAS 有信号时，基于 coloc.abf 的方法（包括本文方法）误报约 10%–13%，coloc.signals 约 4%，coloc.susie 为 0%。
+- [Notes](06_model_guide.md)：从基因型到 PP4 的学习笔记
+- [Code](08_code.md)：文件结构、数据流和复现命令
 
-测试窗口只有 6 个；详细数字、置信区间和注意事项见 [结果](04_results.md)。
+## Main result
 
-## 目录
+**Stage 1（默认设定）.** 误报率匹配到 5% 时，block-coloc 的检出率为 76.8%，比整区域 coloc.abf（73.2%）高 3.5 个百分点（$$p < 10^{-15}$$），与 coloc.signals (cond)（76.2%）相当。增益有限的原因是 eQTL 的两个因果变异平分 1.5% 的遗传度时，每个信号的期望 $$\lvert z\rvert$$ 只有 2.75，eQTL 只有约 15% 的位点找到两个条件独立的 lead。
 
-1. [bulk 模型](01_bulk_model.md)：数据、线性模型、统计量、`z ~ N(Rλ, R)`、场景与 LD 分档
-2. [block-coloc 流程与伪代码](02_block_coloc_pseudocode.md)：block-coloc 三个版本（条件 lead 选择、边际 lead 选择、交接包原版）各做了什么、改了什么、为什么改
-3. [代码说明与复现](03_code.md)：文件结构、数据流、复现命令、自检
-4. [结果](04_results.md)：第一段（主设置）和第二段（变强度、变 LD）
-5. [早期 bulk 结果](05_early_bulk_results.md)：10 月中按 8 月旧设定重建的结果（设定不同，不能直接和第 4 页比较）
+**Stage 2（单因素变化）.** block-coloc 的优势随 eQTL 强度增大：比整区域 coloc.abf 高 4.0（$$h^2_2$$ = 1.5%）、7.1（3%）、13.7（5%）个百分点；eQTL 找到两个 lead 的比例（4%、16%、56%、89%）与运行前的理论预测一致。coloc.signals (cond) 在信号强时检出率更高，但沿用第一段判定线时误报率升到 6%–9%。因果变异间 $$\lvert r\rvert \ge 0.32$$ 时所有方法都无法区分不同的因果变异。详见 [Results](04_results.md)。
 
-## 一句话设定
+## Change log
 
-| 项目 | 设定 |
-|---|---|
-| 基因型 | 真实 UKBB chr22，12 个约 1 Mb 窗口（6 个校准 + 6 个测试） |
-| 样本 | GWAS 20,000 人，eQTL 1,000 人，互不重叠 |
-| 模型 | 两个性状都是线性模型；每个因果 SNP 解释方差 q |
-| 强度 | GWAS q 0.1%–2%（主 0.3%）；eQTL q 0.75%–5%（主 1.5%） |
-| 场景 | single_shared、single_double_shared、double_shared2（共定位）；single_distinct、double_distinct（不共定位）；另有额外阴性 gwas_only、null_both，只报告误报率 |
-| 因果间 LD | 主设置 \|r\| < 0.2；敏感性 0.32–0.63、0.63–0.9 |
-| 方法 | block-coloc（条件 lead 选择，本文方法）、block-coloc（边际 lead 选择）、block-coloc（交接包原版）；对照：整区域 coloc.abf、coloc.susie（raw / fallback）、coloc.signals（mask / cond） |
-| 评价 | 校准窗口上固定误报率 5%，测试窗口上报告检出率等 |
+- **2026-10-28（晚）**：“no valid block 时退回整区域 PP4”定为 block-coloc 的正式规则（用户决定），不含该规则的版本改为敏感性分析；第二段完成（12 窗口 × 50 次 × 58 个场景与参数组合）；Results 加入第二段（§6）、配对比较和 lead 计数的理论对照。
+- **2026-10-28（下午）**：新增 Supplementary Note（参数推导，Proposition 1–9）；Simulation 页的参数表加入每个参数的依据和与已有研究的信号强度对照；Results 加入理论与观察的对照（§5）和第二段的预测。
+- **2026-10-28**：按统计方法学文档的写法重写 Model、Method、Simulation 页；加入与已有模拟研究（Giambartolomei 2014、Wallace 2020/2021、Hukku 2021、SharePro 2024）的对照；Results 改为当前设定的第一段结果。
+- **2026-10-27**：设定改为“区域遗传度按因果个数平分”与 1000 Genomes EUR 参考 LD；加入场景 double_shared1；第一段完成（12 窗口 × 8 场景 × 100 次）。
+- **2026-10-26**：上一版第二段完成；加入 PP4 分布图；文档改为“性状 1 / 性状 2”的写法。
+- **2026-10-25**：上一版第一段完成；加入额外阴性 gwas_only、null_both。
 
-只有基因型和 LD 是真实的；因果 SNP、效应、表型都是模拟的，结果不对应任何真实基因或疾病。
-
-## 主要参考文献
-
-- Giambartolomei C, et al. (2014). *PLoS Genet* 10(5): e1004383.（coloc.abf）
-- Wallace C (2020). *PLoS Genet* 16(4): e1008720.（coloc.signals）
-- Wallace C (2021). *PLoS Genet* 17(9): e1009440.（coloc.susie；本项目 single_distinct、single_shared、single_double_shared、double_shared2 四个场景分别对应其 Fig 1 的第 1–4 行）
-- Wang G, et al. (2020). *JRSS B* 82(5): 1273–1300.（SuSiE）
+只有基因型和 LD 是真实数据；因果变异、效应和表型均为模拟，结果不对应任何真实基因或疾病。

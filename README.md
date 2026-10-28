@@ -1,64 +1,48 @@
 # bulk-block-coloc
 
-在 GWAS × bulk eQTL 共定位中，一个区域里可能有多个独立信号，这时 coloc.abf 的“每个性状至多一个因果变异”假设不成立。
-本仓库评估 **block-coloc**：只在确有多个独立信号时，用 LD 把区域切块、每块跑 coloc.abf；其余情况直接跑整区域 coloc.abf。
-我们在真实 UKBB chr22 基因型上做模拟，与整区域 coloc.abf、coloc.susie、coloc.signals 在相同误报率下比较。
+Colocalisation when a region contains more than one causal variant: a simulation study of **block-coloc** on UK Biobank chr22 genotypes.
 
-**文档网站**：https://SuranCHEN.github.io/bulk-block-coloc/
+block-coloc runs whole-region coloc.abf unless conditional analysis finds multiple independent signals; in that case it splits the region into LD blocks and runs coloc.abf within blocks (and falls back to the whole region if no block contains leads of both traits). We simulate two continuous traits on real genotypes (trait 1: N = 20,000, GWAS-like; trait 2: N = 1,000, bulk-eQTL-like; non-overlapping samples), give every method the 1000 Genomes EUR reference LD, and compare with whole-region coloc.abf, coloc.susie and coloc.signals at a matched 5% false-positive rate.
 
-## 主要结论
+**Documentation**: https://SuranCHEN.github.io/bulk-block-coloc/ （中文）
 
-![测试窗口上各方法在每个场景中被判为共定位的比例（误报率匹配到 5%）](docs/matched_fpr_by_scenario.png)
+- Model: [docs/01_bulk_model.md](docs/01_bulk_model.md)
+- Method: [docs/02_block_coloc_pseudocode.md](docs/02_block_coloc_pseudocode.md)
+- Simulation: [docs/03_simulation.md](docs/03_simulation.md)
+- Results: [docs/04_results.md](docs/04_results.md)
+- Supplementary Note (derivations): [docs/09_parameters.md](docs/09_parameters.md)
 
-**第一段（主设置）**：误报率都控制在 5% 时，block-coloc（条件 lead 选择）检出 93.3% 的共定位位点，高于整区域 coloc.abf（91.2%）和 coloc.susie + fallback（90.1%），低于 coloc.signals (cond)（95.1%）。它几乎不会把单信号位点错误地切块（single_shared 1.5%，交接包原版 84.8%），但 eQTL 信号弱时常漏掉第二个信号。
+## Main result
 
-![第二段：检出率与误报率随 GWAS 强度、eQTL 强度和因果间 LD 的变化](docs/grid_lines.png)
+**Stage 1 (default setting).** At a matched 5% false-positive rate, block-coloc detects 76.8% of colocalised loci, 3.5 points more than whole-region coloc.abf (73.2%, McNemar p < 1e-15) and similar to coloc.signals (cond) (76.2%). The gain is limited because, with the regional eQTL heritability split over two causal variants, each eQTL signal has expected |z| of about 2.75 and a second eQTL signal is found in only about 15% of loci.
 
-**第二段（一次只变一个因素，黑色粗线是本文方法）**：
+**Stage 2 (one factor at a time).** The gain over coloc.abf grows with eQTL strength: +4.0, +7.1 and +13.7 points at eQTL h2 = 1.5%, 3% and 5% (95.9% vs 82.2%). The fraction of two-causal eQTL loci with two conditional leads (4%, 16%, 56%, 89%) matched the values predicted before the run. coloc.signals (cond) detects more when either trait is strong, but its false-positive rate rises to 6-9% with the stage-1 cut-offs. When the causal variants of a trait are in LD (|r| >= 0.32), no method separates distinct causal variants.
 
-1. **GWAS 变强时误报率稳定**：GWAS q 增大到 2% 时，条件 lead 选择的误报率保持在约 4%，而边际 lead 选择升到 9.5%、交接包原版升到 15.7%。
-2. **eQTL 弱时最好，eQTL 强时被反超**：eQTL q = 0.75% 时检出率最高（82.4%）；eQTL q = 5% 时 coloc.signals (cond) 和 coloc.susie + fallback 更高（约 99% 对 97.3%）。
-3. **局限**：不同因果变异高度连锁时所有方法都难以区分（检出率降到约 50%，多数方法误报率升到约 40%，coloc.susie 约 16%）；只有 GWAS 有信号时，基于 coloc.abf 的方法（包括本文方法）误报约 10%–13%，coloc.signals 约 4%，coloc.susie 为 0%。
+block-coloc returns the whole-region coloc.abf PP4 when no block contains leads of both traits; the version without this rule is reported as a sensitivity analysis.
 
-测试窗口只有 6 个；详细数字、置信区间和注意事项见 [结果](https://suranchen.github.io/bulk-block-coloc/04_results.html)。
+## Layout
 
-## 内容
-
-| 位置 | 内容 |
+| Path | Content |
 |---|---|
-| `docs/` | 文档（即网站内容）：bulk 模型、block-coloc 流程与伪代码、代码说明、结果、早期 bulk 结果 |
-| `R/` | 方法与模拟代码：`block_coloc.R`、`methods.R`、`simulate_bulk.R` |
-| `scripts/` | 运行脚本：`run.R`、`evaluate.R`、`test_synthetic.R` |
-| `results/stage1/` | 第一段（主设置）的汇总结果和图 |
-| `results/stage2/` | 第二段（一次只变一个因素）的汇总结果和图 |
+| `docs/` | Documentation site |
+| `R/` | `block_coloc.R` (original implementation), `methods.R` (all compared methods), `simulate_bulk.R` (data-generating process) |
+| `scripts/` | `prepare_ref_ld.R`, `run.R`, `evaluate.R`, `test_synthetic.R` |
+| `results/` | Aggregate tables and figures |
 
-报告的方法：
-
-| 名称 | 代码里的内部名 |
-|---|---|
-| block-coloc（条件 lead 选择，本文方法） | `V3_gate_conditional` |
-| block-coloc（边际 lead 选择） | `V2_gate_marginal` |
-| block-coloc（交接包原版，对照） | `V0_handoff` |
-
-对照：整区域 coloc.abf、coloc.susie（及无 credible set 时退回 coloc.abf 的用法）、coloc.signals（mask / cond）。
-
-## 快速开始（不需要真实数据）
+## Quick start (no individual-level data needed)
 
 ```bash
-# 需要 R ≥ 4.4 和 R 包 coloc、susieR
-Rscript scripts/test_synthetic.R                         # 自检 11 项
-Rscript scripts/test_synthetic.R --make-bank /tmp/synbank  # 生成两个合成窗口
-Rscript scripts/run.R --stage smoke --cores 4 --bank /tmp/synbank
+# R >= 4.4 with coloc and susieR
+Rscript scripts/test_synthetic.R                                   # 22 checks on synthetic genotypes
+Rscript scripts/test_synthetic.R --make-bank /tmp/synbank          # synthetic windows + reference LD
+Rscript scripts/run.R --stage smoke --cores 4 --bank /tmp/synbank --ref /tmp/synbank_ref --windows 31263287,21059630
 Rscript scripts/evaluate.R --stage smoke
 ```
 
-完整的运行步骤和数据格式见 [docs/03_code.md](docs/03_code.md)。
+## Data
 
-## 数据
+This repository contains no UK Biobank data (individual-level genotypes, sample identifiers or in-sample LD matrices). Only genotypes and LD are real; causal variants, effects and phenotypes are simulated and do not correspond to any real gene or disease. The 1000 Genomes reference panel is public.
 
-- 本仓库**不含任何 UKBB 数据**（个体级基因型、样本编号、LD 矩阵）。UKBB 数据受数据使用协议约束，只保存在有权使用者的本地。
-- 只有基因型和 LD 来自真实数据；因果变异、效应和表型均为模拟，结果不对应任何真实基因或疾病。
+## License
 
-## 许可证
-
-GPL-3.0，见 `LICENSE`。
+GPL-3.0, see `LICENSE`.

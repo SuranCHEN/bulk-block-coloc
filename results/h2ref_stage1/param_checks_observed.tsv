@@ -1,0 +1,53 @@
+quantity	scenario	value	n
+mean |z| causal gwas	A_A	7.787	1200
+mean |z| causal eqtl	A_A	3.921	1200
+mean |z| causal gwas	A_AB	7.781	1200
+mean |z| causal eqtl	A_AB	2.767	2400
+mean |z| causal gwas	AB_AB	5.478	2400
+mean |z| causal eqtl	AB_AB	2.718	2400
+P(n_leads1>=1) alpha=1e-05	null_both	0.0008	1200
+P(n_leads2>=1) alpha=1e-05	null_both	0.0025	1200
+P(n_leads1>=2) alpha=1e-05	null_both	0.0	1200
+P(n_leads2>=2) alpha=1e-05	null_both	0.0	1200
+P(block branch) alpha=1e-05	null_both	0.0	1200
+P(n_leads1>=1) alpha=1e-05	gwas_only	1.0	1200
+P(n_leads2>=1) alpha=1e-05	gwas_only	0.0017	1200
+P(n_leads1>=2) alpha=1e-05	gwas_only	0.0017	1200
+P(n_leads2>=2) alpha=1e-05	gwas_only	0.0	1200
+P(block branch) alpha=1e-05	gwas_only	0.0	1200
+P(n_leads1>=1) alpha=1e-05	A_A	1.0	1200
+P(n_leads2>=1) alpha=1e-05	A_A	0.3858	1200
+P(n_leads1>=2) alpha=1e-05	A_A	0.0017	1200
+P(n_leads2>=2) alpha=1e-05	A_A	0.0	1200
+P(block branch) alpha=1e-05	A_A	0.0017	1200
+P(n_leads1>=1) alpha=0.0001	null_both	0.0142	1200
+P(n_leads2>=1) alpha=0.0001	null_both	0.0208	1200
+P(n_leads1>=2) alpha=0.0001	null_both	0.0008	1200
+P(n_leads2>=2) alpha=0.0001	null_both	0.0	1200
+P(block branch) alpha=0.0001	null_both	0.0	1200
+P(n_leads1>=1) alpha=0.0001	gwas_only	1.0	1200
+P(n_leads2>=1) alpha=0.0001	gwas_only	0.0183	1200
+P(n_leads1>=2) alpha=0.0001	gwas_only	0.01	1200
+P(n_leads2>=2) alpha=0.0001	gwas_only	0.0	1200
+P(block branch) alpha=0.0001	gwas_only	0.0	1200
+P(n_leads1>=1) alpha=0.0001	A_A	1.0	1200
+P(n_leads2>=1) alpha=0.0001	A_A	0.6058	1200
+P(n_leads1>=2) alpha=0.0001	A_A	0.0108	1200
+P(n_leads2>=2) alpha=0.0001	A_A	0.0108	1200
+P(block branch) alpha=0.0001	A_A	0.0175	1200
+P(n_leads1>=1) alpha=0.001	null_both	0.1392	1200
+P(n_leads2>=1) alpha=0.001	null_both	0.145	1200
+P(n_leads1>=2) alpha=0.001	null_both	0.0092	1200
+P(n_leads2>=2) alpha=0.001	null_both	0.0108	1200
+P(block branch) alpha=0.001	null_both	0.0025	1200
+P(n_leads1>=1) alpha=0.001	gwas_only	1.0	1200
+P(n_leads2>=1) alpha=0.001	gwas_only	0.1317	1200
+P(n_leads1>=2) alpha=0.001	gwas_only	0.0883	1200
+P(n_leads2>=2) alpha=0.001	gwas_only	0.0058	1200
+P(block branch) alpha=0.001	gwas_only	0.0192	1200
+P(n_leads1>=1) alpha=0.001	A_A	1.0	1200
+P(n_leads2>=1) alpha=0.001	A_A	0.8383	1200
+P(n_leads1>=2) alpha=0.001	A_A	0.095	1200
+P(n_leads2>=2) alpha=0.001	A_A	0.0692	1200
+P(block branch) alpha=0.001	A_A	0.1417	1200
+P(r2(first trait-2 lead, causal) >= 0.4) alpha=0.001	A_A	0.8936	1006

@@ -1,175 +1,78 @@
-# 2. block-coloc 流程与伪代码
+# Method: block-coloc
 
-本页写清 block-coloc 三个版本的具体流程：**block-coloc（条件 lead 选择）**（本文方法）、**block-coloc（边际 lead 选择）**，以及作为对照的 **block-coloc（交接包原版）**。
-对应代码：交接包原版在 `R/block_coloc.R`（`block_coloc()`），两个新版本和所有对照方法在 `R/methods.R`（`run_methods()`）。
-本页的伪代码与代码逐行对应。
+block-coloc 的目标是在“一个性状有多个条件独立信号”时恢复 coloc.abf 的单因果假设：只在确有多个信号时，按 LD 把区域分成若干块，使每块内每个性状至多一个信号，再在块内做 coloc.abf。记号见 [Model](01_bulk_model.md)。代码：`R/methods.R`（`run_methods()`），交接包原版在 `R/block_coloc.R`。
 
-## 名称对照
+## 1. Algorithm
 
-| 本文名称 | 图表中的英文名 | 代码里的名称 |
-|---|---|---|
-| block-coloc（条件 lead 选择，本文方法） | block-coloc (conditional lead selection, proposed) | `V3_gate_conditional` |
-| block-coloc（边际 lead 选择） | block-coloc (marginal lead selection) | `V2_gate_marginal` |
-| block-coloc（交接包原版，对照） | block-coloc (original handoff) | `V0_handoff` |
+**Input.** 两个性状的 $$(\hat b_{kj}, \hat s_{kj}, \mathrm{MAF}_{kj})_{j=1}^M$$、样本量 $$N_k$$、LD 矩阵 $$\widehat{\mathbf{R}}$$；lead 阈值 $$\alpha_{\mathrm{lead}}$$，clump 阈值 $$\rho_c = 0.1$$，邻域阈值 $$\rho_b = 0.4$$（均为 $$r^2$$）；coloc 先验 $$(p_1, p_2, p_{12})$$。
 
----
+**Step 1: marginal leads.** 对每个性状 $$k$$，候选集合 $$\mathcal{A}_k = \{ j : p_{kj} < \alpha_{\mathrm{lead}} \}$$。按 $$p$$ 值从小到大贪心 clump：$$j$$ 入选当且仅当它与所有已选 lead 的 $$\hat r^2 < \rho_c$$。记结果为 $$\mathcal{L}^{\mathrm{marg}}_k$$。
 
-## 2.1 为什么要 block-coloc
+**Step 2: conditional leads.** 按 $$p$$ 值顺序遍历 $$\mathcal{L}^{\mathrm{marg}}_k$$，第一个直接保留；之后的 $$j$$ 仅当条件统计量 $$z_{kj\mid S}$$（[Model](01_bulk_model.md) 式 6.1，$$S$$ 为已保留的 lead）满足 $$2\Phi(-\lvert z_{kj\mid S}\rvert) < \alpha_{\mathrm{lead}}$$ 时保留。记结果为 $$\mathcal{L}_k$$。
 
-coloc.abf 假设**每个性状在区域内至多一个因果变异**。如果区域里有多个独立信号（例如 eQTL 有 A、B 两个信号，GWAS 只和 A 共享），
-整区域 coloc.abf 会被最强的信号主导，可能把“共享 A”误判成“不共享”（H3）。
+**Step 3: gate.** 若
 
-block-coloc 的思路：用 LD 把区域切成几块，**让每块里只剩一个信号**，再在每块里跑 coloc.abf，取 PP4 最大的块。
-三个版本的区别在于**什么时候该切块、怎么数信号**。
+$$
+\lvert\mathcal{L}_1\rvert \ge 1,\quad \lvert\mathcal{L}_2\rvert \ge 1,\quad \max\!\left(\lvert\mathcal{L}_1\rvert, \lvert\mathcal{L}_2\rvert\right) \ge 2,
+$$
 
-## 2.2 记号和输入
+进入 Step 4；否则返回整区域 coloc.abf 的 PP4。两个性状都只有一个信号时 SCV 假设成立，整区域 coloc.abf 即为合适的检验（Wallace 2021 的模拟中，真单因果时整区域 coloc 表现最好）。
 
-| 记号 | 含义 |
+**Step 4: blocks.** 对每个 lead $$l \in \mathcal{L}_k$$ 定义邻域 $$\mathcal{W}(l) = \{ j : \hat r_{jl}^2 \ge \rho_b \}$$。构造二部图：性状 1 的 lead $$a$$ 与性状 2 的 lead $$b$$ 相连当且仅当 $$\mathcal{W}(a) \cap \mathcal{W}(b) \neq \varnothing$$。每个连通分量 $$\mathcal{K}$$ 给出一个块 $$B_{\mathcal{K}} = \bigcup_{l \in \mathcal{K}} \mathcal{W}(l)$$；若分量内同一性状的 lead 效应方向不一致，则按边拆成 $$\mathcal{W}(a) \cup \mathcal{W}(b)$$。去掉少于 2 个 SNP 的块。
+
+**Step 5: block-level coloc.** 对每个块在 $$B$$ 上计算 coloc.abf，返回 $$\max_B \mathrm{PP4}(B)$$ 及对应的块（作为定位结果）。若 Step 4 没有得到任何块（两性状的 lead 邻域互不相交），称为 *no valid block*，返回整区域 coloc.abf 的 PP4（2026-10-28 定为正式规则）。理由：此时两性状的信号在 LD 上互不相邻，按块无法检验共享；退回整区域与 Step 3 中 SCV 成立时的处理一致。把 no valid block 记为无结果的版本（“无 fallback”）作为敏感性分析报告（[Results](04_results.md) §4）。
+
+```text
+Algorithm 1  block-coloc (conditional lead selection)
+input : (b̂, ŝ, MAF, N) for traits 1, 2;  LD R̂;  α_lead;  ρ_c = 0.1;  ρ_b = 0.4
+1  for k in {1, 2}:
+2      L_marg[k] ← GreedyClump({j : p_kj < α_lead}, by p, R̂, ρ_c)
+3      L[k] ← first element of L_marg[k]
+4      for j in L_marg[k][2:]:
+5          if 2Φ(−|z_{kj|L[k]}|) < α_lead:  L[k] ← L[k] ∪ {j}
+6  if |L[1]| ≥ 1 and |L[2]| ≥ 1 and max(|L[1]|, |L[2]|) ≥ 2:
+7      blocks ← ConnectedComponents(L[1], L[2], W(l) = {j : r̂²_jl ≥ ρ_b})
+8      if blocks ≠ ∅:  return max_B coloc.abf(B).PP4
+9      else:           return coloc.abf(all SNPs).PP4          (no valid block)
+10 return coloc.abf(all SNPs).PP4
+```
+
+## 2. Versions compared
+
+| 版本 | 代码名 | lead 计数 | 切块条件（Step 3） | 其他 |
+|---|---|---|---|---|
+| block-coloc（条件 lead 选择，本文方法） | `V3_gate_conditional`，no valid block 时退回（`V3_gate_conditional_fb`） | 条件独立信号（Step 2） | 有 | 两性状用同一 $$\widehat{\mathbf{R}}$$；无 fallback 的版本作为敏感性分析 |
+| block-coloc（边际 lead 选择） | `V2_gate_marginal` | 边际 clump（Step 1） | 有 | 同上 |
+| block-coloc（交接包原版，对照） | `V0_handoff` | 边际 clump；无候选时用 $$p$$ 值最小的 5 个 SNP 补位 | 无：两性状都有 lead 即切块；单 lead 时取 $$\max(\mathrm{PP4}_{\mathrm{block}}, \mathrm{PP4}_{\mathrm{whole}})$$ | — |
+
+相对交接包原版的改动及理由：
+
+1. **去掉补位**：在没有信号的性状上，补位用噪声造出 lead，进而建出无意义的块。
+2. **去掉 $$\max(\mathrm{PP4}_{\mathrm{block}}, \mathrm{PP4}_{\mathrm{whole}})$$**：对两个分数取最大会系统性抬高 PP4，在相同判定线下增加误报。
+3. **切块条件**：SCV 成立时不切块（见 Step 3）。
+4. **条件 lead 选择**：由 [Model](01_bulk_model.md) 式 (3.1)，与强信号 $$c$$ 有 LD 的 SNP $$j$$ 的边际均值为 $$r_{jc}\mu_c$$。若 $$r_{jc}^2 < \rho_c$$，它躲过 clump，但仍可能显著，例如 $$\mu_c = 20$$、$$r_{jc} = 0.3$$ 时 $$\mathbb{E}[z_j] = 6$$。边际计数会把它当作第二个信号；条件统计量 (6.1) 的期望为 0，不会误计。
+
+## 3. Relation to existing methods
+
+- 与 **coloc.signals (cond)** 和 **PWCoCo** 相同之处在于都用条件分析分离信号（[Model](01_bulk_model.md) §6）。不同之处在于，它们对每一对条件独立信号分别在条件化后的整区域统计量上做 coloc，block-coloc 则不改动统计量，只把区域限制在 lead 的 LD 邻域内。
+- 与 **coloc.signals (mask)** 相似：块外的 SNP 不参与计算，相当于屏蔽。区别是 mask 屏蔽已找到信号的邻域、在剩余区域找下一个信号，block-coloc 保留邻域、在邻域内计算。
+- 只在 Step 2 用到 LD 的条件分析；Step 4 的邻域只依赖 $$\hat r^2$$ 是否越过 $$\rho_b$$，对参考 LD 的小误差不敏感。
+
+## 4. Comparison methods
+
+| 方法 | 实现 |
 |---|---|
-| 性状 1 / 性状 2 | GWAS / eQTL |
-| `beta_t, se_t, p_t` | 性状 t 每个 SNP 的效应、标准误、p 值；`z_t = beta_t / se_t` |
-| `R_t` | 与性状 t 统计量匹配的 LD 矩阵（bulk：样本内 LD） |
-| `thr_t` | lead 阈值，候选 1e-3 / 1e-4 / 1e-5，在校准窗口上选（见 2.11） |
-| `clump_r2 = 0.1` | 两个 lead 的 r² 必须低于它 |
-| `block_r2 = 0.4` | lead 的邻域：与 lead 的 r² ≥ 0.4 的 SNP |
-| `p1 = p2 = 1e-4, p12 = 1e-5` | coloc.abf 的先验，所有方法相同 |
+| coloc.abf, whole region | `coloc::coloc.abf`，全部 $$M$$ 个 SNP |
+| coloc.susie | 两性状分别 `susieR::susie_rss(z, R̂, n)`（$$L = 10$$，coverage 0.95，purity 0.5），`coloc::coloc.susie` 对所有 credible set 对计算 PP4，取最大；任一性状无 credible set 时记为无结果 |
+| coloc.susie + coloc.abf fallback | 同上，无 credible set 时返回整区域 coloc.abf（Wallace 2021 讨论的混合用法） |
+| coloc.signals (mask / cond) | `coloc::coloc.signals`，`maxhits = 3`，`r2thr = 0.01`，`pthr` 与 $$\alpha_{\mathrm{lead}}$$ 相同（默认 $$10^{-6}$$ 在 $$N_2 = 1{,}000$$ 时几乎找不到信号），取所有信号对中最大的 PP4 |
 
-## 2.3 公共子程序
+所有方法使用相同先验 $$p_1 = p_2 = 10^{-4}$$、$$p_{12} = 10^{-5}$$（coloc 默认值），相同的 $$\widehat{\mathbf{R}}$$。
 
-```text
-函数 Clump(候选集合 C, p, R):                       # 贪心 clump
-    按 p 从小到大排序 C
-    leads ← 空
-    对 C 中每个 SNP i:
-        若 leads 为空 或 对所有 l ∈ leads 都有 R[i,l]² < clump_r2:
-            leads ← leads ∪ {i}
-    返回 leads
+## 5. Tuning: lead threshold
 
-函数 MarginalLeads(性状 t):                          # 两个新版本用；不补位
-    C ← { j : p_t[j] < thr_t }
-    若 C 为空: 返回 空
-    返回 Clump(C, p_t, R_t)
+$$\alpha_{\mathrm{lead}} \in \{10^{-3}, 10^{-4}, 10^{-5}\}$$（两性状相同），对每个 block-coloc 版本分别在**校准窗口**上选择：在误报率固定为 5% 时取校准检出率最高者，并列取 $$10^{-3}$$。8 月旧 bulk 的 $$(5\times10^{-8}, 10^{-5})$$ 作为敏感性分析报告。当前设定下选出的阈值：block-coloc $$10^{-3}$$（校准检出率 76.5%，$$10^{-4}$$ 与 $$10^{-5}$$ 分别为 74.4% 与 73.3%；不含退回规则时同样选 $$10^{-3}$$），边际 lead 选择 $$10^{-5}$$，交接包原版 $$10^{-4}$$。
 
-函数 ConditionalLeads(性状 t):                       # 条件 lead 选择用
-    M ← MarginalLeads(t)                              # 已按 p 排序
-    若 |M| ≤ 1: 返回 M
-    kept ← { M 的第一个 }
-    对 M 中其余每个 j（按 p 从小到大）:
-        z_cond ← (z_t[j] − R_jS R_SS⁻¹ z_t[S]) / sqrt(1 − R_jS R_SS⁻¹ R_Sj)     # S = kept
-        若 2·Φ(−|z_cond|) < thr_t:  kept ← kept ∪ {j}
-    返回 kept
+## References
 
-函数 BuildBlocks(leads1, leads2):                     # 与 R/block_coloc.R 规则相同
-    若 leads1 或 leads2 为空: 返回 空
-    对每个 GWAS lead a:  W1[a] ← { j : R_1[j,a]² ≥ block_r2 }        # 两个新版本：用各性状自己的 LD；交接包原版两性状都用 R_1
-    对每个 eQTL lead b:  W2[b] ← { j : R_2[j,b]² ≥ block_r2 }
-    建二部图：a 与 b 之间连边 ⇔ W1[a] ∩ W2[b] 非空
-    对图的每个连通分量 K:
-        若 K 内同一性状的 lead 的 z 符号不一致（sign_split）:
-            K 的每条边 (a,b) 单独成块：W1[a] ∪ W2[b]
-        否则:
-            整个分量成块：所有 W1[a] ∪ 所有 W2[b]
-    去掉少于 2 个 SNP 的块和重复块
-    返回 块列表
-
-函数 BlockBranch(leads1, leads2):
-    blocks ← BuildBlocks(leads1, leads2)
-    若至少一块 ABF 成功:  返回 各块 PP4 的最大值              # branch = block
-    否则:                 返回 无结果（no_valid_block）
-
-函数 ABF(SNP 集合 S):
-    在 S 上跑 coloc.abf（两性状的 beta、varbeta、MAF、N，type = quant）
-    返回 PP4
-```
-
-## 2.4 block-coloc（交接包原版，对照）
-
-```text
-对每个性状 t:
-    C ← { j : p_t[j] < thr_t }
-    若 C 为空:            C ← p 值最小的 5 个 SNP          # top-5 补位
-    否则若 |C| < 2:       C ← C ∪ p 值最小的 2 个 SNP      # 至少 2 个候选
-    leads_t ← Clump(C, p_t, R_1)                            # 两性状都用 R_1
-blocks ← BuildBlocks(leads_1, leads_2)                      # 邻域也都用 R_1
-block_pp4 ← 各块 ABF 的最大值（没有有效块时为 0）
-whole_pp4 ← ABF(全部 SNP)
-若 (|leads_1| ≤ 1 或 |leads_2| ≤ 1) 且 whole_pp4 > block_pp4:
-    返回 whole_pp4                                          # 单 lead 时取二者较大者
-否则若有有效块:
-    返回 block_pp4
-否则:
-    返回 无结果（no_valid_block）
-```
-
-## 2.5 block-coloc（边际 lead 选择）
-
-```text
-leads_1 ← MarginalLeads(1);  leads_2 ← MarginalLeads(2)
-若 |leads_1| ≥ 1 且 |leads_2| ≥ 1 且 max(|leads_1|, |leads_2|) ≥ 2:     # 切块条件
-    返回 BlockBranch(leads_1, leads_2)
-否则:
-    返回 ABF(全部 SNP)                                       # branch = whole
-```
-
-## 2.6 block-coloc（条件 lead 选择，本文方法）
-
-```text
-leads_1 ← ConditionalLeads(1);  leads_2 ← ConditionalLeads(2)
-若 |leads_1| ≥ 1 且 |leads_2| ≥ 1 且 max(|leads_1|, |leads_2|) ≥ 2:
-    返回 BlockBranch(leads_1, leads_2)                       # 只用条件后保留的 lead 建块
-否则:
-    返回 ABF(全部 SNP)
-```
-
-和 block-coloc（边际 lead 选择）只差一处：**第 2 个及以后的 lead，要在“以已选 lead 为条件”后仍然显著才计数**。
-
-## 2.7 改了什么、为什么改
-
-| 版本 | 相对上一版的改动 | 为什么 |
-|---|---|---|
-| block-coloc（交接包原版） | 交接包原样 | 对照 |
-| block-coloc（边际 lead 选择） | ① 去掉 top-5 补位；② 去掉“单 lead 时取 max(block, 整区域)”；③ 两性状各用自己的 LD；④ 加切块条件：至少一个性状有 ≥ 2 个 lead 才切块，否则跑整区域 coloc.abf | ① 补位会在没有信号的性状上强行造出 lead，用噪声建块。② 取两个分数的最大值会系统性抬高 PP4，误报随之上升。③ eQTL 统计量应配 eQTL 样本的 LD。④ 两个性状都只有一个信号时，coloc.abf 的单因果假设成立，没有理由切块；Wallace (2021) 也发现真单因果时整区域 coloc 表现最好 |
-| block-coloc（条件 lead 选择） | 第 2 个及以后的 lead 必须在条件分析后仍显著才计数 | 与强信号有 LD 的 SNP 也可能边际显著，又因 r² < 0.1 躲过 clump；它不是条件独立的信号，边际计数却会把它误数成第二个信号（例子见 [bulk 模型 1.7](01_bulk_model.md)） |
-
-**找不到足够 lead 时**：两个新版本都直接跑整区域 coloc.abf；交接包原版则先用 top-5 补位凑出候选。
-
-## 2.8 开发中试过、不再报告的版本
-
-为了记录完整，代码里还有两个版本，第一段主分析中计算过，但从 2026-10-25 起不再报告，第二段也不再计算：
-
-- `V1_block_any`（没有切块条件）：去掉补位和取最大，但只要两个性状都有 lead 就切块。它相当于 block-coloc（边际 lead 选择）去掉第 ④ 条，在第一段里表现最差。
-- `V4_cond_block`（块内再条件化）：切块条件同 block-coloc（条件 lead 选择），块内再扣除块外 lead 的影响。在第一段里与 block-coloc（条件 lead 选择）几乎相同，没有带来额外好处。
-
-## 2.9 每个方法输出什么
-
-| 字段 | 含义 |
-|---|---|
-| `branch` | `block` / `whole`（block-coloc）；`susie` / `whole`（coloc.susie）；`signals`（coloc.signals） |
-| `pp4` | 最终的共定位后验概率；无结果时为 NA |
-| `pp4_whole` | 整区域 coloc.abf 的 PP4（所有方法都存，便于比较） |
-| `n_leads1`, `n_leads2` | 用于判断是否切块的 lead 数（条件 lead 选择时为条件后保留的个数） |
-| `n_leads1_marginal`, `n_leads2_marginal` | 边际 clump 后的 lead 数 |
-| `n_blocks`, `best_block_snps` | 块数、PP4 最大的块包含哪些 SNP |
-| `status` | `ok` / `no_valid_block` / SuSiE 的各种无 credible set 情况等 |
-
-评价时另有 “+ whole-region fallback” 版本：block 分支建不出有效块时，用 `pp4_whole` 代替“无结果”。两种处理方式都报告。
-
-## 2.10 对照方法
-
-| 名称 | 做法 |
-|---|---|
-| coloc.abf, whole region | 整区域 coloc.abf |
-| coloc.susie | 两个性状各跑 `susie_rss(z, R, n)`（L = 10，覆盖率 0.95，纯度 0.5），再用 `coloc.susie` 两两配对，取最大 PP4；任一性状没有 credible set 时记为无结果 |
-| coloc.susie + coloc.abf fallback | 同上，但没有 credible set 时退回整区域 coloc.abf（Wallace 2021 中表现最好的混合用法） |
-| coloc.signals (mask) | 找到一个信号后屏蔽其附近 SNP，再找下一个（最多 3 个，pthr = 1e-3） |
-| coloc.signals (cond) | 逐步条件分析拆信号 |
-
-## 2.11 lead 阈值怎么定
-
-- 三个 block-coloc 版本的 lead 阈值在 1e-3、1e-4、1e-5（两性状相同）中选，**只在 6 个校准窗口上选**：在误报率固定为 5% 时，取校准检出率最高的；并列时取 1e-3。第一段选出的结果：条件 lead 选择 1e-4，边际 lead 选择和交接包原版 1e-5。
-- 8 月旧 bulk 用的 GWAS 5e-8、eQTL 1e-5 作为敏感性分析单独报告，不参与选择。
-
-## 参考文献
-
-- Wallace C (2021). A more accurate method for colocalisation analysis allowing for multiple causal variants. *PLoS Genet* 17(9): e1009440.
-- Wallace C (2020). Eliciting priors and relaxing the single causal variant assumption in colocalisation analyses. *PLoS Genet* 16(4): e1008720.（coloc.signals）
+见 [Model](01_bulk_model.md#references)。
