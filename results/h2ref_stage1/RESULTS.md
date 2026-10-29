@@ -1,6 +1,6 @@
 # Bulk block-coloc: main comparison (stage 1)
 
-Generated 2026-10-28 22:04. Setting: GWAS N 20,000, local h2 0.3%; eQTL N 1,000, local h2 1.5%; each trait's h2 split equally over its causal SNPs (per-SNP h2 = h2 / K); causal |r| < 0.2.
+Generated 2026-10-29 03:28. Setting: GWAS N 20,000, local h2 0.3%; eQTL N 1,000, local h2 1.5%; each trait's h2 split equally over its causal SNPs (per-SNP h2 = h2 / K); causal |r| < 0.2.
 LD given to the methods: 1000 Genomes EUR reference LD (489 people) for both traits.
 Calibration windows: 31263287, 37199593, 39694225, 42313324, 44324730, 46518082. Test windows: 21059630, 24009444, 26904965, 29033189, 33343871, 34894283.
 Loci: 3600 calibration, 3600 test (per method). Target FPR 5% on calibration windows (negatives: single_distinct and double_distinct).
@@ -306,7 +306,7 @@ The proposed conditional method includes whole-region fallback; 'block-coloc (no
 
 ## 9. Inputs (test windows)
 
-Expected causal |z| about sqrt(N h2 / K): GWAS 7.7 (K = 1) / 5.5 (K = 2); eQTL 3.9 (K = 1) / 2.7 (K = 2).
+Expected causal |z| (sqrt(N q / (1 - q)), q = h2 / K): GWAS 7.8 (K = 1) / 5.5 (K = 2); eQTL 3.9 (K = 1) / 2.7 (K = 2). Table: medians over loci and causal SNPs.
 
 | scenario | n | causal_z_gwas | causal_z_eqtl | pair_abs_r_median | gwas_no_cs | eqtl_no_cs |
 |---|---|---|---|---|---|---|

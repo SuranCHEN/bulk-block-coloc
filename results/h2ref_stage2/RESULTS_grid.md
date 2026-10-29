@@ -1,7 +1,7 @@
 # Bulk block-coloc: stage 2, one factor at a time (test windows, frozen cut-offs)
 
-Generated 2026-10-28 22:01. Replicates per cell: 50. Cut-offs and lead thresholds from stage 1 (thresholds.tsv), not re-tuned.
-Strength = local h2 of each trait, split equally over its causal SNPs. LD given to the methods: 1000 Genomes EUR reference LD (489 people) for both traits.
+Generated 2026-10-29 03:30. Replicates per cell: 50. Cut-offs and lead thresholds from stage 1 (thresholds.tsv), not re-tuned.
+Strength = local h2 of each trait; each trait's h2 split equally over its causal SNPs (per-SNP h2 = h2 / K). LD given to the methods: 1000 Genomes EUR reference LD (489 people) for both traits.
 
 ## Three-line conclusion
 
