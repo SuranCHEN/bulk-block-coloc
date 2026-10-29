@@ -3,7 +3,6 @@
 # simulate loci on the 12 windows and run every method on the same inputs.
 # Evaluation is done separately by evaluate.R.
 #
-# Author: Claude (written for the user's project; executed by Codex).
 # Bulk only: no single-cell code is sourced or run.
 #
 # Usage (from the repository root):

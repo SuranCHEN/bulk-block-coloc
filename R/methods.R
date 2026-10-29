@@ -1,6 +1,5 @@
 # Gated block-coloc: method definitions for the v2 comparison.
 #
-# Author: Claude (written for the user's project; executed by Codex).
 # This file only DEFINES methods. It does not simulate data and does not
 # modify R/block_coloc.R, whose internal helpers are reused unchanged.
 #

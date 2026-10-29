@@ -2,7 +2,6 @@
 # Bulk block-coloc: evaluation. Reads scores written by run.R; writes
 # tables, figures and RESULTS.md. No simulation and no method is run here.
 #
-# Author: Claude (written for the user's project; executed by Codex).
 #
 # Usage (from the repository root):
 #   Rscript scripts/bulk_h2ref_v1/evaluate.R --stage smoke
@@ -123,10 +122,10 @@ score_of <- function(pp4) ifelse(is.finite(pp4), pp4, -Inf)
 key_of <- function(d) ifelse(d$method %in% BLOCK,
   ifelse(d$lead_threshold1 == d$lead_threshold2, paste0(d$method, "@", fe(d$lead_threshold1)),
          paste0(d$method, "@", fe(d$lead_threshold1), "/", fe(d$lead_threshold2))), d$method)
-# The three-line conclusion is written by Claude into conclusions_<stage>.md
+# The three-line conclusion is written into conclusions_<stage>.md
 # (in the output folder) and inserted here, so re-running this script keeps it.
 conclusions <- function(st) { f <- file.path(out, paste0("conclusions_", st, ".md"))
-  if (file.exists(f)) readLines(f, warn = FALSE) else "(to be written by Claude after reviewing the tables; Codex leaves this section empty)" }
+  if (file.exists(f)) readLines(f, warn = FALSE) else "(to be written after reviewing the tables; Codex leaves this section empty)" }
 # Reproduce line for the main stage, from the settings recorded in the scores.
 reproduce_main <- function(d) {
   extra <- c(if (identical(eff_kind(d), "normal")) "--effect normal",

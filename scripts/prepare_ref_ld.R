@@ -1,7 +1,6 @@
 #!/usr/bin/env Rscript
 # Reference LD from 1000 Genomes EUR (public data) for the 12 bulk windows.
 #
-# Author: Claude (written for the user's project; executed by Codex).
 #
 # Usage (from the repository root; run once, takes about a minute):
 #   Rscript scripts/bulk_h2ref_v1/prepare_ref_ld.R

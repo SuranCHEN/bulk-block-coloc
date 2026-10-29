@@ -2,7 +2,6 @@
 # "GWAS"; trait 2 = small sample, called "eQTL") on real UKBB chr22 genotypes.
 # Methods receive the 1000 Genomes EUR reference LD (default) or in-sample LD.
 #
-# Author: Claude (written for the user's project; executed by Codex).
 # This file only DEFINES functions. Nothing runs when it is sourced.
 # It does not use any single-cell code.
 #

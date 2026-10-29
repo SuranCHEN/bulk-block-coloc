@@ -2,7 +2,6 @@
 # Checks of simulate_bulk.R and prepare_ref_ld.R on SYNTHETIC genotypes
 # (no UKBB data and no 1000 Genomes data needed).
 #
-# Author: Claude (written for the user's project).
 #
 # Usage (from the repository root):
 #   Rscript scripts/bulk_h2ref_v1/test_synthetic.R [--make-bank <dir>]
