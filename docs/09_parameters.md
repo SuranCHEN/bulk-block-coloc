@@ -158,6 +158,8 @@ $$
 
 在 coloc 默认先验下，$$p_{12}/(p_1p_2) = 10^3$$ 与 $$M - 1 \approx 10^3$$ 抵消；同一组 ABF 在 SNP 更多的窗口给出更低的 PP4，因此各方法的判定线在校准窗口上按误报率确定（[Simulation](03_simulation.md) §6）。
 
+**Remark (blocks).** 同一结论适用于 block-coloc 的块：块中位 42 个 SNP 时先验比约 24。把块内 $$p_1, p_2, p_{12}$$ 都乘以 $$s = M/M_B$$ 后，块内 $$H_1, H_2, H_4$$ 的先验质量（$$M_B p_k s$$）与整区域相同，$$H_3$$ 为 $$M_B(M_B-1)p_1p_2s^2 \approx M(M-1)p_1p_2$$。但这样每一对 SNP 的 $$H_3$$ 先验被放大 $$s^2$$ 倍，而块内的 SNP 对多为同一信号的代理，ABF 乘积很大，块内 $$H_3$$ 因而被高估。数值结果见 [Results](04_results.md) §8。
+
 ## S8. Reference LD
 
 **Proposition 8.** 在 (A1)–(A4) 下，若分析用 $$\hat r$$ 代替真实 $$r$$，非因果 SNP $$j$$ 对强度为 $$\lambda$$ 的因果 $$c$$ 条件化后，条件统计量的期望越过 $$z_{\alpha/2}$$ 当且仅当

@@ -69,6 +69,10 @@ input : (b̂, ŝ, MAF, N) for traits 1, 2;  LD R̂;  α_lead;  ρ_c = 0.1;  ρ_b
 
 所有方法使用相同先验 $$p_1 = p_2 = 10^{-4}$$、$$p_{12} = 10^{-5}$$（coloc 默认值），相同的 $$\widehat{\mathbf{R}}$$。
 
+**Priors inside blocks.** block-coloc 在块内使用同样的每 SNP 先验。由于先验按 SNP 给出，块越小，先验比 $$H_4 : H_3$$ 越偏向共享（[Supplementary Note](09_parameters.md) Proposition 7）。作为敏感性分析，我们把块内 $$p_1, p_2, p_{12}$$ 都乘以 $$M/M_B$$，使块内各假设的先验概率与整区域相同；在相同误报率下增益几乎不变（[Results](04_results.md) §8）。block-coloc 的输出是对所有块取最大的 PP4，块由同一份数据选出，因此它是一个检验统计量，靠误报率匹配来校准，不应按后验概率解读。
+
+**Decision rule for real data.** 真实数据没有真值，不能按误报率定线。采用 traceCB（Jiang et al. 2026）的三分类：PP4 > 0.7 判为共定位，PP3 > 0.7 判为独立信号，其余为不确定；PP3 取自与 PP4 相同的块（不切块或无合格块时取整区域）。模拟中该规则下 block-coloc 的误报不高于整区域 coloc.abf（[Results](04_results.md) §8）。
+
 ## 5. Tuning: lead threshold
 
 $$\alpha_{\mathrm{lead}} \in \{10^{-3}, 10^{-4}, 10^{-5}\}$$（两性状相同），对每个 block-coloc 版本分别在**校准窗口**上选择：在误报率固定为 5% 时取校准检出率最高者，并列取 $$10^{-3}$$。8 月旧 bulk 的 $$(5\times10^{-8}, 10^{-5})$$ 作为敏感性分析报告。当前设定下选出的阈值：block-coloc $$10^{-3}$$（校准检出率 76.5%，$$10^{-4}$$ 与 $$10^{-5}$$ 分别为 74.4% 与 73.3%；不含退回规则时同样选 $$10^{-3}$$），边际 lead 选择 $$10^{-5}$$，交接包原版 $$10^{-4}$$。

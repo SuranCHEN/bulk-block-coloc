@@ -1,0 +1,26 @@
+method	group	n	colocalised	independent	undetermined
+coloc.abf (whole region)	shared (4 scenarios)	2400	0.36541666666666667	0.04125	0.5933333333333334
+coloc.abf (whole region)	single_distinct	600	0.0016666666666666668	0.3566666666666667	0.6416666666666667
+coloc.abf (whole region)	double_distinct	600	0.0	0.10166666666666667	0.8983333333333333
+coloc.abf (whole region)	gwas_only	600	0.0016666666666666668	0.0016666666666666668	0.9966666666666667
+coloc.abf (whole region)	null_both	600	0.0	0.0	1.0
+block-coloc, per-SNP priors (stages 1-2)	shared (4 scenarios)	2400	0.44083333333333335	0.027083333333333334	0.5320833333333334
+block-coloc, per-SNP priors (stages 1-2)	single_distinct	600	0.0016666666666666668	0.355	0.6433333333333333
+block-coloc, per-SNP priors (stages 1-2)	double_distinct	600	0.0016666666666666668	0.09833333333333333	0.9
+block-coloc, per-SNP priors (stages 1-2)	gwas_only	600	0.0016666666666666668	0.0016666666666666668	0.9966666666666667
+block-coloc, per-SNP priors (stages 1-2)	null_both	600	0.0	0.0	1.0
+block-coloc, region-equivalent block priors	shared (4 scenarios)	2400	0.26875	0.03916666666666667	0.6920833333333334
+block-coloc, region-equivalent block priors	single_distinct	600	0.0016666666666666668	0.355	0.6433333333333333
+block-coloc, region-equivalent block priors	double_distinct	600	0.0	0.10333333333333333	0.8966666666666666
+block-coloc, region-equivalent block priors	gwas_only	600	0.0016666666666666668	0.0016666666666666668	0.9966666666666667
+block-coloc, region-equivalent block priors	null_both	600	0.0	0.0	1.0
+coloc.signals (mask)	shared (4 scenarios)	2400	0.42625	0.020833333333333332	0.5529166666666666
+coloc.signals (mask)	single_distinct	600	0.0016666666666666668	0.27	0.7283333333333334
+coloc.signals (mask)	double_distinct	600	0.0	0.04666666666666667	0.9533333333333334
+coloc.signals (mask)	gwas_only	600	0.0016666666666666668	0.0016666666666666668	0.9966666666666667
+coloc.signals (mask)	null_both	600	0.0	0.0	1.0
+coloc.signals (cond)	shared (4 scenarios)	2400	0.44875	0.014583333333333334	0.5366666666666666
+coloc.signals (cond)	single_distinct	600	0.0033333333333333335	0.21166666666666667	0.785
+coloc.signals (cond)	double_distinct	600	0.0	0.025	0.975
+coloc.signals (cond)	gwas_only	600	0.0016666666666666668	0.0	0.9983333333333333
+coloc.signals (cond)	null_both	600	0.0	0.0	1.0

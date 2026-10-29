@@ -12,6 +12,8 @@
 | `evaluate.R` | 在校准窗口上定判定线和 lead 阈值，在测试窗口上计算功效、误报率、AUC、配对检验，输出表格、图和 `RESULTS*.md` |
 | `param_checks.py` | [Supplementary Note](09_parameters.md) Proposition 4–5 的 Monte Carlo（无信号、单因果），并汇总第一段的观察值（Python 3，numpy、pandas；需要本地数据） |
 | `grid_paired.py` | 第二段的检出率、误报率（含 fallback 规则）、配对 McNemar 比较和 lead 计数（Python 3，numpy、pandas、scipy；需要本地的评分表） |
+| `prior_rule.R` | 块内先验与判定规则（Results §8）：在与第一段相同的位点上计算整区域 coloc.abf、block-coloc（每 SNP / 区域等价先验）、coloc.signals 的 PP3 与 PP4；不改 methods.R；需要本地数据 |
+| `prior_rule_eval.py` | 上述结果的评价：误报率匹配与 traceCB 规则（PP4 > 0.7 / PP3 > 0.7），配对比较，并与第一段逐位点核对（Python 3，numpy、pandas、scipy） |
 | `param_checks_two.py` | Proposition 5 的双因果部分：按 Algorithm 1 Step 1–2 计数 lead；参数为 $$\lambda$$ |
 | `test_synthetic.R` | 合成数据自检 22 项：LD 文件、参考 LD 对齐与符号、因果抽样、OLS、$$\mathbf{z}$$ 的零分布、$$\operatorname{Var}(g) = h^2$$、$$\mathbb{E}\lvert z\rvert \approx \sqrt{N h^2/K}$$、公共随机数 |
 
@@ -42,6 +44,7 @@ Rscript scripts/run.R --stage smoke --cores 4 && Rscript scripts/evaluate.R --st
 Rscript scripts/run.R --stage main  --cores 4 && Rscript scripts/evaluate.R --stage main
 Rscript scripts/run.R --stage grid  --cores 3 && Rscript scripts/evaluate.R --stage grid
 python3 scripts/grid_paired.py
+Rscript scripts/prior_rule.R --cores 4 && python3 scripts/prior_rule_eval.py --out outputs/bulk_h2ref_v1_prior --stage1 outputs/bulk_h2ref_v1
 python3 scripts/param_checks.py
 python3 scripts/param_checks_two.py 1.94 2.75 3.16 3.9 5.06 5.48 10.03 14.21
 ```

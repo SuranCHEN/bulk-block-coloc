@@ -1,0 +1,26 @@
+method	group	n	colocalised	independent	undetermined
+coloc.abf (whole region)	shared (4 scenarios)	1200	0.6825	0.20416666666666666	0.11333333333333333
+coloc.abf (whole region)	single_distinct	300	0.0	1.0	0.0
+coloc.abf (whole region)	double_distinct	300	0.0	0.9	0.1
+coloc.abf (whole region)	gwas_only	300	0.0	0.0	1.0
+coloc.abf (whole region)	null_both	300	0.0	0.0	1.0
+block-coloc, per-SNP priors (stages 1-2)	shared (4 scenarios)	1200	0.9233333333333333	0.04833333333333333	0.028333333333333332
+block-coloc, per-SNP priors (stages 1-2)	single_distinct	300	0.0033333333333333335	0.9833333333333333	0.013333333333333334
+block-coloc, per-SNP priors (stages 1-2)	double_distinct	300	0.0	0.88	0.12
+block-coloc, per-SNP priors (stages 1-2)	gwas_only	300	0.0	0.0	1.0
+block-coloc, per-SNP priors (stages 1-2)	null_both	300	0.0	0.0	1.0
+block-coloc, region-equivalent block priors	shared (4 scenarios)	1200	0.4975	0.06833333333333333	0.43416666666666665
+block-coloc, region-equivalent block priors	single_distinct	300	0.0	0.9833333333333333	0.016666666666666666
+block-coloc, region-equivalent block priors	double_distinct	300	0.0	0.8866666666666667	0.11333333333333333
+block-coloc, region-equivalent block priors	gwas_only	300	0.0	0.0	1.0
+block-coloc, region-equivalent block priors	null_both	300	0.0	0.0	1.0
+coloc.signals (mask)	shared (4 scenarios)	1200	0.8675	0.05416666666666667	0.07833333333333334
+coloc.signals (mask)	single_distinct	300	0.0033333333333333335	0.7066666666666667	0.29
+coloc.signals (mask)	double_distinct	300	0.0	0.3433333333333333	0.6566666666666666
+coloc.signals (mask)	gwas_only	300	0.0	0.0	1.0
+coloc.signals (mask)	null_both	300	0.0	0.0	1.0
+coloc.signals (cond)	shared (4 scenarios)	1200	0.9275	0.013333333333333334	0.059166666666666666
+coloc.signals (cond)	single_distinct	300	0.013333333333333334	0.4766666666666667	0.51
+coloc.signals (cond)	double_distinct	300	0.01	0.19	0.8
+coloc.signals (cond)	gwas_only	300	0.0	0.0	1.0
+coloc.signals (cond)	null_both	300	0.0	0.0	1.0

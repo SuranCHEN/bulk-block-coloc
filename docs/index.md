@@ -14,6 +14,7 @@
 - [Stage 1: main setting](04_results.md)：功效、误报率、机制分析、敏感性分析、理论与观察的对照
 - [Stage 2: one factor at a time](04_results.md#6-stage-2-one-factor-at-a-time)：$$h^2_1$$、$$h^2_2$$、因果间 LD 的单因素变化
 - [Sensitivity: normal effect sizes](04_results.md#7-sensitivity-normal-effect-sizes)：效应大小改为正态分布（traceCB 的做法）后的结果
+- [Block priors and decision rules](04_results.md#8-block-priors-and-decision-rules)：块内先验是否造成增益；traceCB 三分类规则下各方法的表现
 - [Previous results](07_results_v1.md)：上一版设定（每个因果变异固定解释比例、样本内 LD）
 - [Early bulk results](05_early_bulk_results.md)：10 月中按 8 月旧设定重建的结果
 
@@ -27,6 +28,8 @@
 
 **Stage 2（单因素变化）.** block-coloc 的优势随 eQTL 强度增大：比整区域 coloc.abf 高 4.0（$$h^2_2$$ = 1.5%）、7.1（3%）、13.7（5%）个百分点；eQTL 找到两个 lead 的比例（4%、16%、56%、89%）与运行前的理论预测一致。coloc.signals (cond) 在信号强时检出率更高，但沿用第一段判定线时误报率升到 6%–9%。因果变异间 $$\lvert r\rvert \ge 0.32$$ 时所有方法都无法区分不同的因果变异。
 
-**Sensitivity（正态效应）.** 效应大小改为 $$\mathcal{N}(0, h^2/K)$$ 后，在相同误报率下 block-coloc 仍比整区域 coloc.abf 高 1.9（默认强度）和 5.5（$$h^2_2$$ = 5%）个百分点，6 个测试窗口全部为正，与 coloc.signals 无差别；增益比固定效应小，因为第二个 eQTL 信号更少可检出。详见 [Results](04_results.md)。
+**Sensitivity（正态效应）.** 效应大小改为 $$\mathcal{N}(0, h^2/K)$$ 后，在相同误报率下 block-coloc 仍比整区域 coloc.abf 高 1.9（默认强度）和 5.5（$$h^2_2$$ = 5%）个百分点，6 个测试窗口全部为正，与 coloc.signals 无差别；增益比固定效应小，因为第二个 eQTL 信号更少可检出。
+
+**Block priors and decision rules.** 块内先验调到与整区域等价后增益几乎全部保留，增益不是由块内先验造成的。按 traceCB 的三分类规则（PP4 > 0.7 / PP3 > 0.7），block-coloc 比 coloc.abf 多判出 7.5（默认）和 24.1（$$h^2_2$$ = 5%）个百分点的共定位，误报不增加；真实数据将采用这一规则。详见 [Results](04_results.md)。
 
 只有基因型和 LD 是真实数据；因果变异、效应和表型均为模拟，结果不对应任何真实基因或疾病。
