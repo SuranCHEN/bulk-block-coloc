@@ -56,7 +56,7 @@ input : (b̂, ŝ, MAF, N) for traits 1, 2;  LD R̂;  α_lead;  ρ_c = 0.1;  ρ_b
 
 - 与 **coloc.signals (cond)** 和 **PWCoCo** 相同之处在于都用条件分析分离信号（[Model](01_bulk_model.md) §6）。不同之处在于，它们对每一对条件独立信号分别在条件化后的整区域统计量上做 coloc，block-coloc 则不改动统计量，只把区域限制在 lead 的 LD 邻域内。
 - 与 **coloc.signals (mask)** 相似：块外的 SNP 不参与计算，相当于屏蔽。区别是 mask 屏蔽已找到信号的邻域、在剩余区域找下一个信号，block-coloc 保留邻域、在邻域内计算。
-- 只在 Step 2 用到 LD 的条件分析；Step 4 的邻域只依赖 $$\hat r^2$$ 是否越过 $$\rho_b$$，对参考 LD 的小误差不敏感。
+- 只在 Step 2 用到 LD 的条件分析；Step 4 的邻域只依赖 $$\hat r^2$$ 是否越过 $$\rho_b$$，对参考 LD 的小误差不敏感。块内的 coloc.abf 使用边际统计量；不同性状的因果变异处于中等 LD 并落入同一块时，它不能区分二者（[Theory](11_theory.md) §4c）。
 
 ## 4. Comparison methods
 

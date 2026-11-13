@@ -6,13 +6,14 @@
 
 ## Summary
 
-1. 误报率匹配到 5% 时，block-coloc 的合并检出率为 76.8%，比整区域 coloc.abf（73.2%）高 3.5 个百分点（95% CI +2.7 至 +4.4，McNemar $$p < 10^{-15}$$），比 coloc.susie + fallback（72.6%）高 4.2 个百分点，与 coloc.signals (cond)（76.2%；+0.6，$$p = 0.38$$）相当，低于 coloc.signals (mask)（78.2%；−1.5，$$p = 0.007$$）。
+1. 误报率匹配到 5% 时，block-coloc 的合并检出率为 76.8%，比整区域 coloc.abf（73.2%）高 3.5 个百分点（95% CI +2.7 至 +4.4，McNemar $$p < 10^{-15}$$），6 个测试窗口全部为正（以窗口为单位的 95% 区间 +2.2 至 +4.9），比 coloc.susie + fallback（72.6%）高 4.2 个百分点，与 coloc.signals (cond)（76.2%；+0.6，$$p = 0.38$$）相当；与 coloc.signals (mask)（78.2%）的差为 −1.5，位点层面 $$p = 0.007$$，但 6 个测试窗口中只有 4 个为负，以窗口为单位的 95% 区间为 −4.5 至 +1.5，差值的方向不能确定（[Window-level inference](12_window_inference.md)）。
 2. 默认设定下增益有限，原因是第二个 eQTL 信号很难检出：$$K_2 = 2$$ 时每个信号的期望 $$\lvert z\rvert = 2.75$$，eQTL 只有 15%–17% 的位点找到两个条件独立的 lead，切块大多由 GWAS 的两个 lead 触发；22.9% 的位点没有同时含两性状 lead 的块，退回整区域 PP4。不含退回规则时检出率为 73.8%，与 coloc.abf 无差别（+0.5，$$p = 0.5$$）。
 3. double_shared1（两性状各有一个特有信号）是所有方法最难的场景（45%–62%）。误报率：single_distinct 3.7%、double_distinct 3.8%；只有 GWAS 有信号时（gwas_only）4.8%，与 coloc.abf（5.0%）相同；两性状都无信号时所有方法为 0。
-4. **第二段**：block-coloc 相对整区域 coloc.abf 的优势随 eQTL 强度增大，在 $$h^2_2$$ = 1.5%、3%、5% 时分别高 4.0、7.1、13.7 个百分点（5% 时 95.9% 对 82.2%）。eQTL 找到两个 lead 的比例与 [Supplementary Note](09_parameters.md) 在运行前给出的预测一致（§5）。coloc.signals (cond) 在任一性状较强时检出率高 1.9–3.8 个百分点，但沿用第一段判定线时其误报率升到 6.0%–8.7%，block-coloc 不超过 4.3%（§6）。
+4. **第二段**：block-coloc 相对整区域 coloc.abf 的优势随 eQTL 强度增大，在 $$h^2_2$$ = 1.5%、3%、5% 时分别高 4.0、7.1、13.7 个百分点（5% 时 95.9% 对 82.2%）。eQTL 找到两个 lead 的比例与 [Supplementary Note](09_parameters.md) 在运行前给出的预测一致（§5）。coloc.signals (cond) 在任一性状较强时检出率高 1.9–3.8 个百分点，但沿用第一段判定线时其误报率升到 6.0%–8.7%，block-coloc 不超过 4.3%（§6）。以窗口为单位时，$$h^2_2 \ge 3\%$$、$$h^2_1 \ge 1\%$$ 各格 6 个窗口全部为正且区间不含 0；最弱的两格（$$h^2_2 = 0.75\%$$、$$h^2_1 = 0.1\%$$）方向一致，但计入判定线的抽样误差后区间含 0。
 5. 同一性状两个因果变异 $$\lvert r\rvert \ge 0.32$$ 时所有方法检出率下降，且 single_distinct 被判为共定位的比例升到 19%–29%（mid）和 70%–79%（high）：强 LD 中的不同因果变异在本样本量下不可区分（§6.4）。
 6. **敏感性分析（正态效应）**：效应改为从 $$\mathcal{N}(0, h^2/K)$$ 抽取后，在相同误报率下 block-coloc 仍显著优于整区域 coloc.abf（默认强度 +1.9，$$h^2_2 = 5\%$$ 时 +5.5 个百分点，6 个测试窗口全部为正），与 coloc.signals 无差别；增益比固定效应小，因为第二个 eQTL 信号更少可检出（§7）。
 7. **块内先验与判定规则**：把块内先验调到与整区域等价后，增益几乎全部保留（+3.0 / +7.7 个百分点），增益不是由块内先验造成的。用 traceCB 的固定规则（PP4 > 0.7 共定位，PP3 > 0.7 独立）时，block-coloc（每 SNP 先验）判出的共定位比 coloc.abf 多 7.5 和 24.1 个百分点，误报不增加；$$h^2_2 = 5\%$$ 时它是唯一对共定位与不共定位位点都给出明确结论的方法（§8）。
+8. **补充分析（2026-11-13）**：(i) 以窗口为单位的推断见 [Window-level inference](12_window_inference.md)。(ii) 共享变异不是各性状中最强的信号时，整区域 coloc.abf 的检出率随 eQTL 强度停滞或下降（single_double_shared：69% → 62%），block-coloc 升到 88%–89%（[Theory](11_theory.md) §1）。(iii) 不同性状的因果变异之间 $$\lvert r\rvert$$ 为 0.32–0.63 时，double_distinct 被判为共定位的比例从 4.0% 升到 16.3%（整区域 coloc.abf：3.7% → 12.8%），块内条件化不能降低它（[Theory](11_theory.md) §4c）。(iv) 按块合成的区域后验不优于取最大，不采用（[Partitioned posterior](10_partitioned_posterior.md)）。
 
 ## 1. Power
 
@@ -42,6 +43,8 @@
 | 无 fallback − coloc.abf | +0.5 (−0.9, +2.0) | 0.5 |
 | 无 fallback − signals (cond) | −2.4 (−4.0, −0.8) | 0.004 |
 | signals (mask) − coloc.abf | +5.0 (+3.8, +6.3) | 1e−15 |
+
+上表的区间和 $$p$$ 值把位点当作独立样本，描述的是这 6 个测试窗口内的抽样误差。以窗口为单位的区间（6 个窗口各自差值的 $$t$$ 区间；窗口 bootstrap）：block-coloc − coloc.abf +3.5 (+2.2, +4.9)，6/6 个窗口为正；− coloc.susie + fb +4.2 (+2.5, +5.8)，6/6；− signals (cond) +0.6 (−1.6, +2.8)，2/6；− signals (mask) −1.5 (−4.5, +1.5)，2/6。详见 [Window-level inference](12_window_inference.md)。
 
 ## 2. Type I error
 
@@ -184,7 +187,7 @@
 | mid LD | +0.2 (−0.6, +1.1)，$$p = 0.80$$ | +2.2 (−0.1, +4.5)，$$p = 0.07$$ | −2.7 (−4.9, −0.4)，$$p = 0.03$$ |
 | high LD | −0.6 (−1.2, +0.1)，$$p = 0.18$$ | +1.9 (−0.0, +3.8)，$$p = 0.07$$ | +3.3 (+1.7, +5.0)，$$p < 10^{-3}$$ |
 
-block-coloc 在 9 个设定中 7 个显著高于整区域 coloc.abf，其余 2 个（mid、high LD）无差别。与 coloc.signals (cond) 相比，弱信号时更好，任一性状较强时低 1.9–3.8 个百分点；后者在这些格的误报率为 4.3%–8.7%，高于 block-coloc 的 1.3%–4.3%，两者不是在相同误报率下比较。
+block-coloc 在 9 个设定中 7 个显著高于整区域 coloc.abf，其余 2 个（mid、high LD）无差别。与 coloc.signals (cond) 相比，弱信号时更好，任一性状较强时低 1.9–3.8 个百分点；后者在这些格的误报率为 4.3%–8.7%，高于 block-coloc 的 1.3%–4.3%，两者不是在相同误报率下比较。以窗口为单位并计入判定线的抽样误差后，$$h^2_2 = 0.0075$$ 与 $$h^2_1 = 0.001$$ 两格的区间含 0（−1.1 至 +2.4；−1.0 至 +1.2），其余结论不变。
 
 ### 6.4 LD between causal variants
 
@@ -198,6 +201,7 @@ block-coloc 在 9 个设定中 7 个显著高于整区域 coloc.abf，其余 2 �
 
 - 误报率的上升几乎全部来自 single_distinct：性状 1 的因果 A 与性状 2 的因果 B 之间 $$\lvert r\rvert \ge 0.63$$ 时，A 处的边际 $$z$$ 有 $$\lvert r\rvert\lambda$$ 来自 B，所有基于单 SNP 贝叶斯因子的方法都无法区分 A 与 B（Wallace 2021 与 Hukku et al. 2021 也指出强 LD 中的不同因果变异无法分辨）。coloc.susie 单独使用时为 31%，同样很高。
 - 切块比例随 LD 升高而下降，与 Proposition 3 一致：同号时第二个信号的条件强度降为 $$\lambda\sqrt{1 - \lvert r\rvert}$$，异号时两个边际信号互相抵消；中位 lead 数从 2 + 1 变为 1 + 1。
+- 补充模拟（[Theory](11_theory.md) §4b、§4c）：$$h^2_2 = 3\%$$ 时 single_distinct 被判为共定位的比例在 mid 档为 11.2%、high 档为 64.8%（全部 12 个窗口；默认强度下上表测试窗口为 25.0% 与 75.3%）。多信号位点中跨性状的一对因果变异处于 mid 档时，double_distinct 的误报为 16.3%（block-coloc）与 12.8%（coloc.abf）。
 
 ### 6.5 Extra negatives
 
@@ -286,11 +290,11 @@ AUC：正态默认 block-coloc 0.708、coloc.abf 0.698、signals 0.690–0.696�
 1. 块内采用每 SNP 先验（[Method](02_block_coloc_pseudocode.md) §4）；区域等价先验作为敏感性分析报告，用来说明增益不是由块内先验造成的。
 2. 真实数据中采用 traceCB 的三分类规则（PP4 > 0.7 / PP3 > 0.7），与组内已有工作口径一致。
 3. **按误报率匹配定线有盲区**：$$h^2_2 = 5\%$$ 时不共定位位点的 PP4 几乎为 0，定出的判定线只有 0.012–0.014，只有 GWAS 有信号的位点（PP4 约 0.09，[Model](01_bulk_model.md) 式 5.3）在 coloc.abf 和 block-coloc 下全部越线（100%）；固定规则下为 0%。按误报率匹配仍是比较方法的标准，但其判定线不宜直接用于真实数据。
-4. **局限**：固定规则的比较只在两格、固定效应、因果变异间 $$\lvert r\rvert < 0.2$$ 的阴性位点上做过；高 LD 阴性（§6.4）下固定规则的误报尚未检验。
+4. **局限**：固定规则的比较只在两格、固定效应、因果变异间 $$\lvert r\rvert < 0.2$$ 的阴性位点上做过；高 LD 阴性（§6.4）下固定规则的误报尚未检验。跨性状因果变异处于中等 LD 的 double_distinct 位点上，固定规则下判为共定位的比例为 block-coloc 1.8%、整区域 coloc.abf 0.8%（[Theory](11_theory.md) §4c，全部 12 个窗口）。
 
 ## 9. Notes
 
-- 每个场景 600 个阳性位点，检出率约 75% 时标准误约 1.8 个百分点；方法间 2–3 个百分点的差异需看配对检验。
+- 每个场景 600 个阳性位点，检出率约 75% 时标准误约 1.8 个百分点；方法间 2–3 个百分点的差异需看配对检验。这些标准误以位点为单位；窗口只有 6 个，推广到新的区域时以 [Window-level inference](12_window_inference.md) 的区间为准。
 - 1 个位点上 coloc.signals (mask) 报 coloc 内部错误（`'by' must specify a uniquely valid column`），记为无结果。
 - 只有基因型和 LD 是真实的，结果不对应任何真实基因或疾病。
 - 上一版设定（每个因果变异固定解释比例、方法使用样本内 LD）的结果见 [Previous results](07_results_v1.md)。

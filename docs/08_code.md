@@ -16,6 +16,10 @@
 | `prior_rule_eval.py` | 上述结果的评价：误报率匹配与 traceCB 规则（PP4 > 0.7 / PP3 > 0.7），配对比较，并与第一段逐位点核对（Python 3，numpy、pandas、scipy） |
 | `param_checks_two.py` | Proposition 5 的双因果部分：按 Algorithm 1 Step 1–2 计数 lead；参数为 $$\lambda$$ |
 | `test_synthetic.R` | 合成数据自检 22 项：LD 文件、参考 LD 对齐与符号、因果抽样、OLS、$$\mathbf{z}$$ 的零分布、$$\operatorname{Var}(g) = h^2$$、$$\mathbb{E}\lvert z\rvert \approx \sqrt{N h^2/K}$$、公共随机数 |
+| `window_inference.py` | 以窗口为单位的区间（$$t$$ 区间、窗口 bootstrap、同时重抽校准窗口的两层 bootstrap）；读 `scores_*.tsv.gz` 与 `thresholds.tsv` |
+| `propC.py`、`theory_checks.py` | [Theory](11_theory.md) 的分层表和图（按共享变异是否最强；PP4 随两个信号强度差的变化） |
+| `block_partition.R`、`partition_eval.py` | 按块合成的区域后验（[Partitioned posterior](10_partitioned_posterior.md)）；位点与第一段相同 |
+| `block_partition_tier.R`、`block_partition_shadow.R` | 补充模拟：$$h^2_2 = 3\%$$ × mid / high LD；跨性状因果变异处于中等 LD 的多信号场景 |
 
 ## Data flow
 

@@ -11,12 +11,14 @@ block-coloc runs whole-region coloc.abf unless conditional analysis finds multip
 - Simulation: [docs/03_simulation.md](docs/03_simulation.md)
 - Results: [docs/04_results.md](docs/04_results.md)
 - Supplementary Note (derivations): [docs/09_parameters.md](docs/09_parameters.md)
+- Theory: [docs/11_theory.md](docs/11_theory.md)
+- Window-level inference: [docs/12_window_inference.md](docs/12_window_inference.md)
 
 ## Main result
 
-**Stage 1 (default setting).** At a matched 5% false-positive rate, block-coloc detects 76.8% of colocalised loci, 3.5 points more than whole-region coloc.abf (73.2%, McNemar p < 1e-15) and similar to coloc.signals (cond) (76.2%). The gain is limited because, with the regional eQTL heritability split over two causal variants, each eQTL signal has expected |z| of about 2.75 and a second eQTL signal is found in only about 15% of loci.
+**Stage 1 (default setting).** At a matched 5% false-positive rate, block-coloc detects 76.8% of colocalised loci, 3.5 points more than whole-region coloc.abf (73.2%, McNemar p < 1e-15) and similar to coloc.signals (cond) (76.2%). The gain is limited because, with the regional eQTL heritability split over two causal variants, each eQTL signal has expected |z| of about 2.75 and a second eQTL signal is found in only about 15% of loci. The gain over coloc.abf is positive in all 6 test windows (window-level 95% CI +2.2 to +4.9 points).
 
-**Stage 2 (one factor at a time).** The gain over coloc.abf grows with eQTL strength: +4.0, +7.1 and +13.7 points at eQTL h2 = 1.5%, 3% and 5% (95.9% vs 82.2%). The fraction of two-causal eQTL loci with two conditional leads (4%, 16%, 56%, 89%) matched the values predicted before the run. coloc.signals (cond) detects more when either trait is strong, but its false-positive rate rises to 6-9% with the stage-1 cut-offs. When the causal variants of a trait are in LD (|r| >= 0.32), no method separates distinct causal variants.
+**Stage 2 (one factor at a time).** The gain over coloc.abf grows with eQTL strength: +4.0, +7.1 and +13.7 points at eQTL h2 = 1.5%, 3% and 5% (95.9% vs 82.2%). The fraction of two-causal eQTL loci with two conditional leads (4%, 16%, 56%, 89%) matched the values predicted before the run. coloc.signals (cond) detects more when either trait is strong, but its false-positive rate rises to 6-9% with the stage-1 cut-offs. When the causal variants of a trait are in LD (|r| >= 0.32), no method separates distinct causal variants. When causal variants of different traits are in moderate LD (|r| 0.32-0.63) at multi-signal loci, block-coloc has a higher false-positive rate than coloc.abf (16.3% vs 12.8%).
 
 block-coloc returns the whole-region coloc.abf PP4 when no block contains leads of both traits; the version without this rule is reported as a sensitivity analysis.
 
