@@ -14,3 +14,5 @@ shards_*/
 .DS_Store
 .Rhistory
 .Rproj.user/
+docs/06_model_guide.md
+*model_guide*

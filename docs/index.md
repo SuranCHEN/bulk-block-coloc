@@ -1,40 +1,41 @@
-# block-coloc (bulk)
+# block-coloc: Block-Partitioned Genetic Colocalisation under Reference LD
 
-**Goal.** 评估 block-coloc 在“一个区域内有多个因果变异”时的共定位表现。block-coloc 只在条件分析发现多个独立信号时，按 LD 把区域切块并在块内做 coloc.abf；否则做整区域 coloc.abf。我们在真实 UK Biobank chr22 基因型上模拟两个连续性状（大样本 GWAS，$$N = 20{,}000$$；小样本 bulk eQTL，$$N = 1{,}000$$），所有方法使用 1000 Genomes EUR 参考 LD，在相同误报率下与整区域 coloc.abf、coloc.susie、coloc.signals 比较。
+多因果变异顺式区域中的汇总统计量共定位方法：仅当逐步条件分析在至少一个性状中检出多个独立信号时，利用参考 LD 邻域构造联合候选块，并在块内对未调整的原始边际统计量运行 `coloc.abf`，兼顾多因果信号局部分离与外部参考 LD 误差下的统计稳健性。
+
+- [Documentation](#documentation)
+- [Simulation](#simulation)
+- [Main Figures](#main-figures)
+- [Supplementary](#supplementary)
+- [Useful Links](#useful-links)
 
 ## Documentation
 
-- [Model](01_bulk_model.md)：个体水平线性模型，summary statistics 的分布 $$\mathbf{z} \sim \mathcal{N}(\sqrt{N}\mathbf{R}\boldsymbol\beta, \mathbf{R})$$，coloc.abf 的假设与后验，多因果变异下的现有方法，条件 $$z$$，参考 LD
-- [Method](02_block_coloc_pseudocode.md)：block-coloc 算法，比较的版本，与 coloc.signals / PWCoCo 的关系，对照方法
-- [Simulation](03_simulation.md)：与已有模拟研究的对照，数据生成过程，参数，场景，评价方式
-- [Supplementary Note](09_parameters.md)：模拟参数的推导。假设 A1–A5；Proposition 1–9：因果变异的信号强度、效应分布、因果间 LD、有无信号时的 lead、ABF 收缩、coloc 先验质量、参考 LD 误差、评价精度
-- [Theory](11_theory.md)：整区域 coloc.abf 在多信号下收敛到什么（Proposition C）；固定划分下的相合性及其适用范围；LD 中不同因果变异的分辨（模拟结果）
+- [Model, Algorithm, and Analytical Properties](method.md)
 
-## Results
+## Simulation
 
-- [Stage 1: main setting](04_results.md)：功效、误报率、机制分析、敏感性分析、理论与观察的对照
-- [Stage 2: one factor at a time](04_results.md#6-stage-2-one-factor-at-a-time)：$$h^2_1$$、$$h^2_2$$、因果间 LD 的单因素变化
-- [Sensitivity: normal effect sizes](04_results.md#7-sensitivity-normal-effect-sizes)：效应大小改为正态分布（traceCB 的做法）后的结果
-- [Block priors and decision rules](04_results.md#8-block-priors-and-decision-rules)：块内先验是否造成增益；traceCB 三分类规则下各方法的表现
-- [Window-level inference](12_window_inference.md)：以窗口为单位的区间；哪些结论在窗口层面成立
-- [Partitioned posterior（不采用）](10_partitioned_posterior.md)：按块合成的区域后验；相同误报率下不优于取最大；合成公式已有先例（Hukku et al. 2022）
-- [Previous results](07_results_v1.md)：上一版设定（每个因果变异固定解释比例、样本内 LD）
-- [Early bulk results](05_early_bulk_results.md)：10 月中按 8 月旧设定重建的结果
+- [Simulation Design, Scenarios, and Evaluation Protocol](simulation.md)
 
-## Code
+## Main Figures
 
-- [Code](08_code.md)：文件结构、数据流和复现命令
+- [Figure 1: Workflow and Exact Branch Decomposition](fig1.md)
+- [Figure 2: Detection Power, Type I Error, and Signal-Strength Grids](fig2.md)
+- [Figure 3: Multi-Signal Behaviour of Whole-Region coloc.abf](fig3.md)
+- [Figure 4: Matched In-Sample LD vs 1000 Genomes Reference LD](fig4.md)
+- [Figure 5: Fixed Three-Way Calling Rule and Block-Prior Sensitivity](fig5.md)
 
-## Main result
+## Supplementary
 
-**Stage 1（默认设定）.** 误报率匹配到 5% 时，block-coloc 的检出率为 76.8%，比整区域 coloc.abf（73.2%）高 3.5 个百分点（$$p < 10^{-15}$$），与 coloc.signals (cond)（76.2%）相当；6 个测试窗口中 block-coloc 相对 coloc.abf 的差全部为正。增益有限的原因是 eQTL 的两个因果变异平分 1.5% 的遗传度时，每个信号的期望 $$\lvert z\rvert$$ 只有 2.75，eQTL 只有约 15% 的位点找到两个条件独立的 lead。
+- [Formal Proofs, Sensitivity Analyses, and Extended Ablations](supplement.md)
 
-**Stage 2（单因素变化）.** block-coloc 的优势随 eQTL 强度增大：比整区域 coloc.abf 高 4.0（$$h^2_2$$ = 1.5%）、7.1（3%）、13.7（5%）个百分点；eQTL 找到两个 lead 的比例（4%、16%、56%、89%）与运行前的理论预测一致。coloc.signals (cond) 在信号强时检出率更高，但沿用第一段判定线时误报率升到 6%–9%。因果变异间 $$\lvert r\rvert \ge 0.32$$ 时所有方法都无法区分不同的因果变异。
+## Useful Links
 
-**Sensitivity（正态效应）.** 效应大小改为 $$\mathcal{N}(0, h^2/K)$$ 后，在相同误报率下 block-coloc 仍比整区域 coloc.abf 高 1.9（默认强度）和 5.5（$$h^2_2$$ = 5%）个百分点，6 个测试窗口全部为正，与 coloc.signals 无差别；增益比固定效应小，因为第二个 eQTL 信号更少可检出。
+- [GitHub Repository](https://github.com/SuranCHEN/bulk-block-coloc)
+- [Saved Summary Tables (`results/`)](https://github.com/SuranCHEN/bulk-block-coloc/tree/main/results)
 
-**Block priors and decision rules.** 块内先验调到与整区域等价后增益几乎全部保留，增益不是由块内先验造成的。按 traceCB 的三分类规则（PP4 > 0.7 / PP3 > 0.7），block-coloc 比 coloc.abf 多判出 7.5（默认）和 24.1（$$h^2_2$$ = 5%）个百分点的共定位，误报不增加；真实数据将采用这一规则。详见 [Results](04_results.md)。
+## Change log
 
-**Limitations.** 同一性状或不同性状的两个因果变异 $$\lvert r\rvert \ge 0.32$$ 时，所有方法都难以区分不同的因果变异；不同性状的因果变异处于中等 LD 的多信号位点上，block-coloc 的误报高于整区域 coloc.abf（16.3% 对 12.8%）。测试窗口只有 6 个，均在 chr22。
-
-只有基因型和 LD 是真实数据；因果变异、效应和表型均为模拟，结果不对应任何真实基因或疾病。
+- **2026-11-18**：依据统计学同侪评审统一本文档符号体系与假设–定理–证明–注记结构，补全窗口聚类推断与匹配/参考 LD 平衡对照表，并升级全套 `plotmath` 论文主图。
+- **2026-11-17**：精简重组文档结构为方法、模拟与五主图加补充材料，完成参考 LD 失配分布及先验赔率公式校核。
+- **2026-11-16**：补充全概率三分支分解、分块规则消融、表型尺度估计敏感性及四类阴性联合校准分析。
+- **2026-11-15**：完成样本内匹配 LD 与 1000 Genomes EUR 参考 LD 的逐位点配对比较。

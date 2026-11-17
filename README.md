@@ -1,50 +1,45 @@
 # bulk-block-coloc
 
-Colocalisation when a region contains more than one causal variant: a simulation study of **block-coloc** on UK Biobank chr22 genotypes.
+Colocalisation when a genomic region contains multiple causal variants: generative model, theoretical properties, and simulation evaluation of **block-coloc** on UK Biobank chromosome 22 genotypes.
 
-block-coloc runs whole-region coloc.abf unless conditional analysis finds multiple independent signals; in that case it splits the region into LD blocks and runs coloc.abf within blocks (and falls back to the whole region if no block contains leads of both traits). We simulate two continuous traits on real genotypes (trait 1: N = 20,000, GWAS-like; trait 2: N = 1,000, bulk-eQTL-like; non-overlapping samples), give every method the 1000 Genomes EUR reference LD, and compare with whole-region coloc.abf, coloc.susie and coloc.signals at a matched 5% false-positive rate.
+**block-coloc** defaults to whole-region `coloc.abf` unless stepwise conditional analysis detects multiple independent signals ($\max(\lvert\mathcal{L}_1\rvert, \lvert\mathcal{L}_2\rvert) \ge 2$) in at least one trait. When multiple signals are detected, it forms joint linkage-disequilibrium (LD) neighbourhood blocks ($\hat r^2 \ge \rho_b$) around conditional leads, evaluates `coloc.abf` on unadjusted marginal summary statistics within each joint block, and falls back to the whole region when no admissible joint block is formed. Across two continuous traits simulated on non-overlapping cohorts (trait 1: $N_1 = 20{,}000$, GWAS-like; trait 2: $N_2 = 1{,}000$, bulk-eQTL-like) with external 1000 Genomes EUR reference LD ($n_{\mathrm{ref}} = 489$), we benchmark **block-coloc** against `block-coloc (no fallback)`, `block-coloc (marginal leads)`, whole-region `coloc.abf`, `coloc.susie`, `coloc.susie (fallback)`, `coloc.signals (mask)`, and `coloc.signals (cond)`.
 
-**Documentation**: https://SuranCHEN.github.io/bulk-block-coloc/ （中文）
+**Documentation site**: https://SuranCHEN.github.io/bulk-block-coloc/ (Chinese)
 
-- Model: [docs/01_bulk_model.md](docs/01_bulk_model.md)
-- Method: [docs/02_block_coloc_pseudocode.md](docs/02_block_coloc_pseudocode.md)
-- Simulation: [docs/03_simulation.md](docs/03_simulation.md)
-- Results: [docs/04_results.md](docs/04_results.md)
-- Supplementary Note (derivations): [docs/09_parameters.md](docs/09_parameters.md)
-- Theory: [docs/11_theory.md](docs/11_theory.md)
-- Window-level inference: [docs/12_window_inference.md](docs/12_window_inference.md)
+- Model, Algorithm, and Analytical Properties: [docs/method.md](docs/method.md)
+- Simulation Design, Scenarios, and Evaluation Protocol: [docs/simulation.md](docs/simulation.md)
+- Figure 1 (Workflow and Branch Decomposition): [docs/fig1.md](docs/fig1.md)
+- Figure 2 (Power, Type I Error, and Signal-Strength Grids): [docs/fig2.md](docs/fig2.md)
+- Figure 3 (Multi-Signal Behaviour of Whole-Region `coloc.abf`): [docs/fig3.md](docs/fig3.md)
+- Figure 4 (Matched In-Sample LD vs 1000G Reference LD): [docs/fig4.md](docs/fig4.md)
+- Figure 5 (Fixed Three-Way Calling Rule and Block-Prior Sensitivity): [docs/fig5.md](docs/fig5.md)
+- Supplementary Proofs, Sensitivity Analyses, and Extended Ablations: [docs/supplement.md](docs/supplement.md)
 
-## Main result
+## Summary of findings
 
-**Stage 1 (default setting).** At a matched 5% false-positive rate, block-coloc detects 76.8% of colocalised loci, 3.5 points more than whole-region coloc.abf (73.2%, McNemar p < 1e-15) and similar to coloc.signals (cond) (76.2%). The gain is limited because, with the regional eQTL heritability split over two causal variants, each eQTL signal has expected |z| of about 2.75 and a second eQTL signal is found in only about 15% of loci. The gain over coloc.abf is positive in all 6 test windows (window-level 95% CI +2.2 to +4.9 points).
+**Reference-LD performance and mechanism.** Calibrated to a $5\%$ false-positive rate (FPR) on independent genomic windows, **block-coloc** detects $76.8\%$ of colocalised test loci versus $73.2\%$ for whole-region `coloc.abf` ($+3.5$ percentage points; $6/6$ test windows positive, window-level $95\%$ $t_5$ CI $[+2.2, +4.9]$; descriptive locus-level McNemar $p < 10^{-15}$) and is comparable to `coloc.signals (cond)` ($76.2\%$; paired difference $+0.6$ percentage points, $95\%$ $t_5$ CI $[-1.6, +2.8]$). As eQTL regional heritability increases ($h^2_2 \in \{1.5\%, 3.0\%, 5.0\%\}$), the advantage over `coloc.abf` widens to $+4.0$, $+7.1$, and $+13.7$ percentage points ($95.9\%$ vs $82.2\%$ at $h^2_2 = 5.0\%$), reflecting that whole-region `coloc.abf` asymptotically tests coincidence of the strongest marginal signals ($\mathbb{1}\{j_1^* = j_2^*\}$) rather than shared causality ($\mathcal{C}_1 \cap \mathcal{C}_2 \neq \varnothing$; Supplement Proposition S1). Law-of-total-probability branch decomposition shows that the gain arises from loci entering valid joint blocks ($\mathcal{G}_1$), while replacing matched in-sample LD ($\mathbf{R}_1, \mathbf{R}_2$) with 1000 Genomes EUR reference LD ($\widehat{\mathbf{R}}$) changes **block-coloc** pooled detection by at most $0.5$ percentage points (window means $-0.4$ to $+0.2$) compared with losses of $3.3$ to $6.7$ percentage points for `coloc.signals (cond)` (a deterministic subset-perturbation bound clarifies why minor block-boundary shifts have negligible impact when marginal inputs stay fixed; Supplement Proposition S5).
 
-**Stage 2 (one factor at a time).** The gain over coloc.abf grows with eQTL strength: +4.0, +7.1 and +13.7 points at eQTL h2 = 1.5%, 3% and 5% (95.9% vs 82.2%). The fraction of two-causal eQTL loci with two conditional leads (4%, 16%, 56%, 89%) matched the values predicted before the run. coloc.signals (cond) detects more when either trait is strong, but its false-positive rate rises to 6-9% with the stage-1 cut-offs. When the causal variants of a trait are in LD (|r| >= 0.32), no method separates distinct causal variants. When causal variants of different traits are in moderate LD (|r| 0.32-0.63) at multi-signal loci, block-coloc has a higher false-positive rate than coloc.abf (16.3% vs 12.8%).
+**Scope and limitations.** When matched in-sample LD is available, `coloc.signals (cond)` outperforms **block-coloc** ($79.5\%$ vs $77.0\%$ at default; $82.9\%$ vs $76.8\%$ at $h^2_1 = 2.0\%$); **block-coloc** is specifically motivated for summary-statistic analyses relying on external reference LD. At the evaluated sample sizes, effect strengths, and calibrated $5\%$ FPR cut-offs, discrimination of distinct causal variants degrades sharply once $\lvert r\rvert \ge 0.32$ (a finite-sample power boundary rather than asymptotic non-identifiability when $\lvert r\rvert < 1$), and under moderate cross-trait LD ($\lvert r\rvert \in [0.32, 0.63)$) at multi-signal loci **block-coloc** shows a higher FPR than `coloc.abf` ($16.3\%$ vs $12.8\%$ calibrated; $1.8\%$ vs $0.8\%$ under $\mathrm{PP4} > 0.7$). Under fixed-threshold calling ($\mathrm{PP4} > 0.7$), part of the higher call rate reflects elevated prior odds inside smaller blocks ($\Pr(H_4)/\Pr(H_3) = p_{12}/\{(M_B - 1)p_1 p_2\} \approx 24.4$ at $M_B = 42$ vs $\approx 1.1$ whole-region), whereas matched-FPR gains persist under region-equivalent block priors ($+3.0$ vs $+3.5$ percentage points, where the finite-set factor $(M_B - 1)/M_B$ yields an approximate odds match). Under $h^2_2 = 5.0\%$, calibrating solely on two-trait distinct negatives lowers the threshold to $0.012$–$0.014$, which single-trait (`gwas_only`) loci cross ($0.0\%$ under $\mathrm{PP4} > 0.7$). Finally, with fixed $\alpha_{\mathrm{lead}}$, finite $n_{\mathrm{ref}}$, or orthogonal genotypes ($\mathbf{R} = \mathbf{I}_M$) under a minimum block size of two, the data-driven algorithm is not universally consistent. Empirical evaluations use $6$ calibration and $6$ test windows on chromosome 22.
 
-block-coloc returns the whole-region coloc.abf PP4 when no block contains leads of both traits; the version without this rule is reported as a sensitivity analysis.
-
-## Layout
+## Repository layout
 
 | Path | Content |
 |---|---|
-| `docs/` | Documentation site |
-| `R/` | `block_coloc.R` (original implementation), `methods.R` (all compared methods), `simulate_bulk.R` (data-generating process) |
-| `scripts/` | `prepare_ref_ld.R`, `run.R`, `evaluate.R`, `test_synthetic.R` |
-| `results/` | Aggregate tables and figures |
+| `docs/` | Streamlined documentation site (`method`, `simulation`, `fig1`–`fig5`, `supplement`) |
+| `R/` | `block_coloc.R` (original implementation), `methods.R` (compared methods), `simulate_bulk.R` (data-generating process) |
+| `scripts/` | Simulation runners, evaluation scripts, sensitivity analyses, and figure generation scripts |
+| `results/` | Saved aggregate tables and markdown reports |
 
-## Quick start (no individual-level data needed)
+## Quick start (synthetic genotypes, no individual-level data required)
 
 ```bash
-# R >= 4.4 with coloc and susieR
-Rscript scripts/test_synthetic.R                                   # 22 checks on synthetic genotypes
-Rscript scripts/test_synthetic.R --make-bank /tmp/synbank          # synthetic windows + reference LD
+Rscript scripts/test_synthetic.R
+Rscript scripts/test_synthetic.R --make-bank /tmp/synbank
 Rscript scripts/run.R --stage smoke --cores 4 --bank /tmp/synbank --ref /tmp/synbank_ref --windows 31263287,21059630
 Rscript scripts/evaluate.R --stage smoke
+Rscript scripts/plot_main_figures.R
 ```
 
-## Data
+## Data and license
 
-This repository contains no UK Biobank data (individual-level genotypes, sample identifiers or in-sample LD matrices). Only genotypes and LD are real; causal variants, effects and phenotypes are simulated and do not correspond to any real gene or disease. The 1000 Genomes reference panel is public.
-
-## License
-
-GPL-3.0, see `LICENSE`.
+This repository contains no individual-level UK Biobank genotypes, sample identifiers, or in-sample LD matrices. Only genotype LD structure is real; causal variants, effects, and phenotypes are simulated. Licensed under GPL-3.0 (`LICENSE`).
