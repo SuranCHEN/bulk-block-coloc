@@ -32,10 +32,3 @@
 
 - [GitHub Repository](https://github.com/SuranCHEN/bulk-block-coloc)
 - [Saved Summary Tables (`results/`)](https://github.com/SuranCHEN/bulk-block-coloc/tree/main/results)
-
-## Change log
-
-- **2026-11-18**：依据统计学同侪评审统一本文档符号体系与假设–定理–证明–注记结构，补全窗口聚类推断与匹配/参考 LD 平衡对照表，并升级全套 `plotmath` 论文主图。
-- **2026-11-17**：精简重组文档结构为方法、模拟与五主图加补充材料，完成参考 LD 失配分布及先验赔率公式校核。
-- **2026-11-16**：补充全概率三分支分解、分块规则消融、表型尺度估计敏感性及四类阴性联合校准分析。
-- **2026-11-15**：完成样本内匹配 LD 与 1000 Genomes EUR 参考 LD 的逐位点配对比较。
