@@ -123,7 +123,7 @@ $$
 **分块多元正态条件分布与逐步条件统计量.** 设已选条件独立变异索引集为 $$\mathcal{S} \subset \{1, \dots, M\}$$，待检变异为 $$j \notin \mathcal{S}$$。在正态近似模型 (1.9) 下，记 $$\boldsymbol\mu_k = \sqrt{N_k}\,\mathbf{R}_k \boldsymbol\beta_k$$，分块联合分布及给定 $$\mathbf{z}_{k\mathcal{S}}$$ 的 Schur 补条件分布为
 
 $$
-\begin{pmatrix} \mathbf{z}_{k\mathcal{S}} \\ z_{kj} \end{pmatrix} \,\middle|\, \boldsymbol\beta_k \;\sim\; \mathcal{N}\!\left(\begin{pmatrix} \boldsymbol\mu_{k\mathcal{S}} \\ \mu_{kj} \end{pmatrix},\ \sigma^2_k \begin{pmatrix} \mathbf{R}_{k,\mathcal{S}\mathcal{S}} & \mathbf{R}_{k,\mathcal{S}j} \\ \mathbf{R}_{k,j\mathcal{S}} & 1 \end{pmatrix}\right), \tag{3.1}
+\begin{pmatrix} \mathbf{z}_{k\mathcal{S}} \\ z_{kj} \end{pmatrix} \,\Big|\, \boldsymbol\beta_k \;\sim\; \mathcal{N}\!\left(\begin{pmatrix} \boldsymbol\mu_{k\mathcal{S}} \\ \mu_{kj} \end{pmatrix},\ \sigma^2_k \begin{pmatrix} \mathbf{R}_{k,\mathcal{S}\mathcal{S}} & \mathbf{R}_{k,\mathcal{S}j} \\ \mathbf{R}_{k,j\mathcal{S}} & 1 \end{pmatrix}\right), \tag{3.1}
 $$
 
 $$

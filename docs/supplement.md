@@ -57,7 +57,7 @@ $$
 
 ### 1.3 Ideal fixed-partition consistency and non-consistency of data-driven blocks
 
-**Proposition S2（固定区域划分下分块后验的渐近性质）.** *设区域先验划分 $$\mathcal{P}$$ 固定。对任一块 $$B \in \mathcal{P}$$ 及满足 $$\mathbf{b}_{k,B} \neq \mathbf{0}$$ 的性状，记唯一块内极大值点为 $$j_k^*(B) = \arg\max_{j \in B}\lvert b_{kj}\rvert$$。在 Proposition S1 渐近条件下：若两性状在 $$B$$ 内均非零，则 $$\mathrm{PP4}(B) \xrightarrow{p} \mathbb{1}\{j_1^*(B) = j_2^*(B)\}$$；若至少一个性状在 $$B$$ 内满足 $$\mathbf{b}_{k,B} = \mathbf{0}$$，则 $$\mathrm{PP4}(B) \xrightarrow{p} 0$$。从而 $$\max_{B \in \mathcal{P}}\mathrm{PP4}(B) \xrightarrow{p} 1$$ 与并集乘积 $$1 - \prod_{B \in \mathcal{P}}\{1 - \mathrm{PP4}(B)\} \xrightarrow{p} 1$$ 均当且仅当存在某块 $$B \in \mathcal{P}$$ 使两性状块内效应均非零且极大值点重合。*
+**Proposition S2（固定区域划分下分块后验的渐近性质）.** *设区域先验划分 $$\mathcal{P}$$ 固定。对任一块 $$B \in \mathcal{P}$$ 及满足 $$\mathbf{b}_{k,B} \neq \mathbf{0}$$ 的性状，记唯一块内极大值点为 $$j_k^*(B) = \arg\max_{j \in B}\lvert b_{kj}\rvert$$。在 Proposition S1 渐近条件下：若两性状在 $$B$$ 内均非零，则 $$\mathrm{PP4}(B) \xrightarrow{p} \mathbb{I}\{j_1^*(B) = j_2^*(B)\}$$；若至少一个性状在 $$B$$ 内满足 $$\mathbf{b}_{k,B} = \mathbf{0}$$，则 $$\mathrm{PP4}(B) \xrightarrow{p} 0$$。从而 $$\max_{B \in \mathcal{P}}\mathrm{PP4}(B) \xrightarrow{p} 1$$ 与并集乘积 $$1 - \prod_{B \in \mathcal{P}}\{1 - \mathrm{PP4}(B)\} \xrightarrow{p} 1$$ 均当且仅当存在某块 $$B \in \mathcal{P}$$ 使两性状块内效应均非零且极大值点重合。*
 
 *Proof.* 当 $$\lvert B\rvert \ge 2$$ 且两性状在 $$B$$ 内均非零时，对块 $$B$$ 直接应用 Proposition S1。当单 SNP 块 $$\lvert B\rvert = 1$$（记 $$B = \{j\}$$）时，$$H_3$$ 权重恒为 $$0$$，余下假设中若 $$b_{1j}, b_{2j}$$ 均非零，则 $$p_{12}\mathrm{ABF}_{1j}\mathrm{ABF}_{2j}$$ 在指数主项上严格主导 $$1$$、$$p_1\mathrm{ABF}_{1j}$$ 与 $$p_2\mathrm{ABF}_{2j}$$，故仍有 $$\mathrm{PP4}(B) \xrightarrow{p} 1$$。若任一块 $$B$$（$$\lvert B\rvert \ge 1$$）中存在性状使 $$\mathbf{b}_{k,B} = \mathbf{0}$$，则该性状对一切 $$j \in B$$ 有 $$z_{kj} = O_p(1)$$ 与 $$\mathrm{ABF}_{kj} = O_p(N_k^{-1/2})$$，使 $$H_3$$ 与 $$H_4$$ 权重相对空信号项或单非零性状项依概率趋于 $$0$$，从而 $$\mathrm{PP4}(B) \xrightarrow{p} 0$$。对有限个块取极大或乘积即得等价充要条件。$$\square$$
 
@@ -135,13 +135,13 @@ $$
 
 括号内两项均介于 $$[\min_h\Delta\ell_h, \max_h\Delta\ell_h]$$，故差值的绝对值至多为 $$\delta_B$$；结合 $$p_4(1 - p_4) \le 1/4$$ 在 $$t \in [0, 1]$$ 上积分并应用三角不等式即得 (S9)。$$\square$$
 
-**Lemma S3（经验分位数的有限样本扰动界）.** *设在容量为 $$n$$ 的校准阴性样本上，统计量 $$T_{\mathrm{bc}}$$ 与基准统计量 $$X$$ 在事件 $$\mathcal{G}_1$$ 之外逐样本相等，记分块比例 $$\hat\varepsilon = n^{-1}\sum_{i=1}^n \mathbb{1}\{i \in \mathcal{G}_1\}$$。则经验分布函数对一切实数 $$t$$ 满足 $$\lvert\hat F_{\mathrm{bc}}(t) - \hat F_X(t)\rvert \le \hat\varepsilon$$；对任意 $$q \in (\hat\varepsilon, 1 - \hat\varepsilon)$$，经验广义逆满足*
+**Lemma S3（经验分位数的有限样本扰动界）.** *设在容量为 $$n$$ 的校准阴性样本上，统计量 $$T_{\mathrm{bc}}$$ 与基准统计量 $$X$$ 在事件 $$\mathcal{G}_1$$ 之外逐样本相等，记分块比例 $$\hat\varepsilon = n^{-1}\sum_{i=1}^n \mathbb{I}\{i \in \mathcal{G}_1\}$$。则经验分布函数对一切实数 $$t$$ 满足 $$\lvert\hat F_{\mathrm{bc}}(t) - \hat F_X(t)\rvert \le \hat\varepsilon$$；对任意 $$q \in (\hat\varepsilon, 1 - \hat\varepsilon)$$，经验广义逆满足*
 
 $$
 \hat F_X^{-1}(q - \hat\varepsilon) \le \hat F_{\mathrm{bc}}^{-1}(q) \le \hat F_X^{-1}(q + \hat\varepsilon) \,. \tag{S11}
 $$
 
-*Proof.* 在 $$\mathcal{G}_1$$ 之外 $$\mathbb{1}\{T_{\mathrm{bc},i} \le t\} = \mathbb{1}\{X_i \le t\}$$，故 $$\lvert\hat F_{\mathrm{bc}}(t) - \hat F_X(t)\rvert \le \hat\varepsilon$$ 对一切 $$t \in \mathbb{R}$$ 成立。令 $$t = \hat F_X^{-1}(q + \hat\varepsilon)$$ 得 $$\hat F_{\mathrm{bc}}(t) \ge \hat F_X(t) - \hat\varepsilon \ge q$$，即得右端上界；对任意 $$t < \hat F_X^{-1}(q - \hat\varepsilon)$$ 有 $$\hat F_{\mathrm{bc}}(t) \le \hat F_X(t) + \hat\varepsilon < q$$，令 $$t \uparrow \hat F_X^{-1}(q - \hat\varepsilon)$$ 得左端下界。$$\square$$
+*Proof.* 在 $$\mathcal{G}_1$$ 之外 $$\mathbb{I}\{T_{\mathrm{bc},i} \le t\} = \mathbb{I}\{X_i \le t\}$$，故 $$\lvert\hat F_{\mathrm{bc}}(t) - \hat F_X(t)\rvert \le \hat\varepsilon$$ 对一切 $$t \in \mathbb{R}$$ 成立。令 $$t = \hat F_X^{-1}(q + \hat\varepsilon)$$ 得 $$\hat F_{\mathrm{bc}}(t) \ge \hat F_X(t) - \hat\varepsilon \ge q$$，即得右端上界；对任意 $$t < \hat F_X^{-1}(q - \hat\varepsilon)$$ 有 $$\hat F_{\mathrm{bc}}(t) \le \hat F_X(t) + \hat\varepsilon < q$$，令 $$t \uparrow \hat F_X^{-1}(q - \hat\varepsilon)$$ 得左端下界。$$\square$$
 
 *Remark S5.* Lemma S3 直接限制了经验临界值所处的**经验秩（rank）**区间宽度。阈值数值本身高度接近（例如默认设定下 $$0.145$$ 与 $$0.141$$），还依赖校准阴性经验分布 $$\hat F_X$$ 在 $$q = 0.95$$ 处具有足够的局部概率密度而无明显跳跃。
 
